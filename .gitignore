@@ -1,1 +1,44 @@
- 
+# Image files
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.ico
+*.svg
+*.webp
+*.bmp
+*.tiff
+*.psd
+*.ai
+*.eps
+
+# Image directories
+public/assets/images/
+public/assets/uploads/
+public/images/
+public/uploads/
+storage/images/
+storage/uploads/
+images/
+uploads/
+
+# Thumbnails
+**/thumbs/
+**/thumbnails/
+**/_thumbs/
+**/_thumbnails/
+
+# Keep placeholder/default images
+!placeholder.jpg
+!default.png
+!logo.svg
+!favicon.ico
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db 

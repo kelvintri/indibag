@@ -256,20 +256,6 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Meta Title</label>
-                                <input type="text" name="meta_title"
-                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                       placeholder="Product name | MICHAEL KORS Category">
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Meta Description</label>
-                                <textarea name="meta_description" rows="2"
-                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                          placeholder="Shop MICHAEL KORS product description..."></textarea>
-                            </div>
-
-                            <div>
                                 <label class="block text-sm font-medium text-gray-700">Price (Rp)</label>
                                 <input type="number" name="price" required min="0"
                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">

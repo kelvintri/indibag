@@ -44,6 +44,19 @@ if (strpos($path, '/admin') === 0) {
                     $db = new Database();
                     $conn = $db->getConnection();
 
+                    // Get brand and category data for meta generation
+                    $stmt = $conn->prepare("SELECT name FROM brands WHERE id = ?");
+                    $stmt->execute([$_POST['brand_id']]);
+                    $brand = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                    $stmt = $conn->prepare("SELECT name FROM categories WHERE id = ?");
+                    $stmt->execute([$_POST['category_id']]);
+                    $category = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                    if (!$brand || !$category) {
+                        throw new Exception("Invalid brand or category ID");
+                    }
+
                     // Generate slug from name
                     $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $_POST['name'])));
                     
@@ -63,9 +76,16 @@ if (strpos($path, '/admin') === 0) {
                         } while ($count > 0);
                     }
 
-                    // Generate meta title and description if not provided
-                    $meta_title = $_POST['meta_title'] ?? $_POST['name'] . ' | MICHAEL KORS ' . ucfirst($category['name']);
-                    $meta_description = $_POST['meta_description'] ?? $_POST['description'];
+                    // Generate meta title and description
+                    // Limit meta title to 100 characters
+                    $meta_title = substr($_POST['name'] . ' | ' . strtoupper($brand['name']) . ' ' . ucfirst($category['name']), 0, 100);
+
+                    // Limit meta description to 255 characters
+                    $description_excerpt = substr($_POST['description'], 0, 150); // Shorter excerpt to allow for brand name and prefix
+                    if (strlen($_POST['description']) > 150) {
+                        $description_excerpt .= '...';
+                    }
+                    $meta_description = substr('Shop ' . strtoupper($brand['name']) . ' ' . $_POST['name'] . '. ' . $description_excerpt, 0, 255);
 
                     // Begin transaction
                     $conn->beginTransaction();
@@ -137,48 +157,110 @@ if (strpos($path, '/admin') === 0) {
                         }
                         
                         $category_folder = strtolower($category['name']);
-                        $upload_dir = ROOT_PATH . '/assets/images/' . $category_folder . '/primary/';
                         
-                        // Create directories if they don't exist
-                        if (!is_dir($upload_dir)) {
-                            mkdir($upload_dir, 0777, true);
-                        }
+                        // Define paths first
+                        $base_upload_dir = ROOT_PATH . '/public/assets/images/' . $category_folder;
+                        $upload_dir = $base_upload_dir . '/primary/';
                         
-                        // Generate filename
-                        $filename = $slug . '_primary.jpg';
+                        // Clean filename
+                        $clean_name = preg_replace('/[^a-zA-Z0-9\s]/', '', $_POST['name']);
+                        $clean_name = str_replace(' ', '_', trim(strtolower($clean_name)));
+                        
+                        // Generate paths
+                        $filename = $clean_name . '_primary.jpg';
                         $upload_path = $upload_dir . $filename;
                         $web_path = '/assets/images/' . $category_folder . '/primary/' . $filename;
                         
-                        if (move_uploaded_file($_FILES['primary_image']['tmp_name'], $upload_path)) {
-                            $stmt = $conn->prepare("
-                                INSERT INTO product_galleries (product_id, image_url, is_primary, sort_order, created_at)
-                                VALUES (?, ?, 1, 0, NOW())
-                            ");
-                            $stmt->execute([$product_id, $web_path]);
+                        // Add debug logging
+                        error_log("Upload attempt - Base directory: " . ROOT_PATH);
+                        error_log("Category folder: " . $category_folder);
+                        error_log("Upload directory: " . $upload_dir);
+                        error_log("Upload path: " . $upload_path);
+                        error_log("Web path: " . $web_path);
+
+                        // Check if file exists and is readable
+                        if (!file_exists($_FILES['primary_image']['tmp_name']) || !is_readable($_FILES['primary_image']['tmp_name'])) {
+                            error_log("Temporary file does not exist or is not readable");
+                            throw new Exception("Temporary file issue");
                         }
+
+                        // Check directory permissions
+                        error_log("Base directory exists: " . (is_dir($base_upload_dir) ? 'yes' : 'no'));
+                        error_log("Base directory writable: " . (is_writable($base_upload_dir) ? 'yes' : 'no'));
+                        error_log("Upload directory exists: " . (is_dir($upload_dir) ? 'yes' : 'no'));
+                        error_log("Upload directory writable: " . (is_writable($upload_dir) ? 'yes' : 'no'));
+
+                        // Create directories if they don't exist
+                        if (!is_dir($base_upload_dir)) {
+                            if (!mkdir($base_upload_dir, 0777, true)) {
+                                error_log("Failed to create base directory: " . $base_upload_dir);
+                                throw new Exception("Failed to create base category directory");
+                            }
+                        }
+
+                        if (!is_dir($upload_dir)) {
+                            if (!mkdir($upload_dir, 0777, true)) {
+                                error_log("Failed to create upload directory: " . $upload_dir);
+                                throw new Exception("Failed to create primary image directory");
+                            }
+                        }
+
+                        // Set directory permissions
+                        chmod($base_upload_dir, 0777);
+                        chmod($upload_dir, 0777);
+
+                        // Attempt file upload
+                        if (!move_uploaded_file($_FILES['primary_image']['tmp_name'], $upload_path)) {
+                            error_log("Failed to move file. PHP Error: " . error_get_last()['message']);
+                            throw new Exception('Failed to move primary image. Upload path: ' . $upload_path);
+                        }
+
+                        // Log success
+                        error_log("File successfully uploaded to: " . $upload_path);
+
+                        // Insert into product_galleries
+                        $stmt = $conn->prepare("
+                            INSERT INTO product_galleries (product_id, image_url, is_primary, sort_order, created_at)
+                            VALUES (?, ?, 1, 0, NOW())
+                        ");
+                        $stmt->execute([$product_id, $web_path]);
                     }
 
-                    // Handle hover image
+                    // Handle hover image similarly
                     if (isset($_FILES['hover_image']) && $_FILES['hover_image']['error'] === UPLOAD_ERR_OK) {
-                        $upload_dir = ROOT_PATH . '/assets/images/' . $category_folder . '/hover/';
+                        $upload_dir = $base_upload_dir . '/hover/';
                         
-                        // Create hover directory if it doesn't exist
-                        if (!is_dir($upload_dir)) {
-                            mkdir($upload_dir, 0777, true);
-                        }
-                        
-                        // Generate filename
-                        $filename = $slug . '_hover.jpg';
+                        // Generate paths for hover image
+                        $filename = $clean_name . '_hover.jpg';
                         $upload_path = $upload_dir . $filename;
                         $web_path = '/assets/images/' . $category_folder . '/hover/' . $filename;
                         
-                        if (move_uploaded_file($_FILES['hover_image']['tmp_name'], $upload_path)) {
-                            $stmt = $conn->prepare("
-                                INSERT INTO product_galleries (product_id, image_url, is_primary, sort_order, created_at)
-                                VALUES (?, ?, 0, 1, NOW())
-                            ");
-                            $stmt->execute([$product_id, $web_path]);
+                        // Create hover directory if needed
+                        if (!is_dir($upload_dir)) {
+                            if (!mkdir($upload_dir, 0777, true)) {
+                                error_log("Failed to create hover directory: " . $upload_dir);
+                                throw new Exception("Failed to create hover image directory");
+                            }
                         }
+                        
+                        // Set directory permissions
+                        chmod($upload_dir, 0777);
+                        
+                        // Attempt file upload
+                        if (!move_uploaded_file($_FILES['hover_image']['tmp_name'], $upload_path)) {
+                            error_log("Failed to move hover file. PHP Error: " . error_get_last()['message']);
+                            throw new Exception('Failed to move hover image. Upload path: ' . $upload_path);
+                        }
+                        
+                        // Log success
+                        error_log("Hover file successfully uploaded to: " . $upload_path);
+                        
+                        // Insert into product_galleries
+                        $stmt = $conn->prepare("
+                            INSERT INTO product_galleries (product_id, image_url, is_primary, sort_order, created_at)
+                            VALUES (?, ?, 0, 1, NOW())
+                        ");
+                        $stmt->execute([$product_id, $web_path]);
                     }
 
                     $conn->commit();

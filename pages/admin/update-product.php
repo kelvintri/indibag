@@ -14,6 +14,21 @@ try {
     // Start transaction
     $conn->beginTransaction();
     
+    // Get brand and category names for meta data
+    $stmt = $conn->prepare("
+        SELECT b.name as brand_name, c.name as category_name 
+        FROM products p
+        LEFT JOIN brands b ON p.brand_id = b.id
+        LEFT JOIN categories c ON p.category_id = c.id
+        WHERE p.id = ?
+    ");
+    $stmt->execute([$_POST['product_id']]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Generate meta title and description if not provided
+    $meta_title = $_POST['meta_title'] ?? $_POST['name'] . ' | ' . strtoupper($result['brand_name']) . ' ' . ucfirst($result['category_name']);
+    $meta_description = $_POST['meta_description'] ?? 'Shop ' . strtoupper($result['brand_name']) . ' ' . $_POST['name'] . '. ' . $_POST['description'];
+    
     // Update product basic information
     $stmt = $conn->prepare("
         UPDATE products 
@@ -22,6 +37,8 @@ try {
             category_id = ?, 
             price = ?, 
             stock = ?,
+            meta_title = ?,
+            meta_description = ?,
             updated_at = NOW()
         WHERE id = ?
     ");
@@ -32,6 +49,8 @@ try {
         $_POST['category_id'],
         $_POST['price'],
         $_POST['stock'],
+        $meta_title,
+        $meta_description,
         $_POST['product_id']
     ]);
     

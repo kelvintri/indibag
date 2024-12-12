@@ -47,6 +47,30 @@ try {
     // Start transaction
     $conn->beginTransaction();
     
+    // Get brand and category data
+    $stmt = $conn->prepare("SELECT name FROM brands WHERE id = ?");
+    $stmt->execute([$_POST['brand_id']]);
+    $brand = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    $stmt = $conn->prepare("SELECT name FROM categories WHERE id = ?");
+    $stmt->execute([$_POST['category_id']]);
+    $category = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$brand || !$category) {
+        throw new Exception("Invalid brand or category ID");
+    }
+    
+    // Generate meta title and description if not provided
+    // Limit meta title to 100 characters (per database schema)
+    $meta_title = substr($_POST['name'] . ' | ' . strtoupper($brand['name']) . ' ' . ucfirst($category['name']), 0, 100);
+
+    // Limit meta description to 255 characters (per database schema)
+    $description_excerpt = substr($_POST['description'], 0, 150); // Shorter excerpt to allow for brand name and prefix
+    if (strlen($_POST['description']) > 150) {
+        $description_excerpt .= '...';
+    }
+    $meta_description = substr('Shop ' . strtoupper($brand['name']) . ' ' . $_POST['name'] . '. ' . $description_excerpt, 0, 255);
+    
     // Insert product
     $stmt = $conn->prepare("
         INSERT INTO products (
@@ -66,8 +90,8 @@ try {
         ':details' => $_POST['details'] ?? null,
         ':category_id' => $_POST['category_id'],
         ':brand_id' => $_POST['brand_id'],
-        ':meta_title' => $_POST['meta_title'] ?? null,
-        ':meta_description' => $_POST['meta_description'] ?? null,
+        ':meta_title' => $meta_title,
+        ':meta_description' => $meta_description,
         ':price' => $_POST['price'],
         ':stock' => $_POST['stock']
     ]);
@@ -174,6 +198,7 @@ try {
         'success' => false,
         'message' => $e->getMessage()
     ]);
+    exit;
 } finally {
     ob_end_flush();
 }

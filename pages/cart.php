@@ -233,13 +233,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                         
                         <div class="flex justify-between mb-2">
                             <span class="text-gray-600">Shipping</span>
-                            <span class="text-gray-900">Calculated at checkout</span>
+                            <span class="text-gray-900" x-text="formatPrice(calculateShipping())"></span>
                         </div>
                         
                         <div class="border-t border-gray-200 mt-4 pt-4">
                             <div class="flex justify-between mb-4">
                                 <span class="text-lg font-semibold text-gray-900">Total</span>
-                                <span class="text-lg font-semibold text-gray-900" x-text="formatPrice(total)"></span>
+                                <span class="text-lg font-semibold text-gray-900" x-text="formatPrice(total + calculateShipping())"></span>
                             </div>
                             
                             <?php if (Auth::isLoggedIn() && $addresses): ?>
@@ -266,6 +266,11 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('cartPage', () => ({
         items: [],
         total: 0,
+
+        calculateShipping() {
+            const totalQty = this.items.reduce((sum, item) => sum + item.quantity, 0);
+            return totalQty * 50000; // Rp 50.000 per item
+        },
 
         initCart(items, total) {
             this.items = items;

@@ -9,6 +9,13 @@ $cart = new Cart();
 $cartItems = $cart->getItems();
 $total = $cart->getTotal();
 
+// Calculate shipping cost
+$totalQty = array_reduce($cartItems, function($sum, $item) {
+    return $sum + $item['quantity'];
+}, 0);
+$shippingCost = $totalQty * 50000; // Rp 50.000 per item
+$grandTotal = $total + $shippingCost;
+
 // Get user's addresses
 $query = "SELECT * FROM addresses WHERE user_id = :user_id ORDER BY is_default DESC, created_at DESC";
 $stmt = $conn->prepare($query);
@@ -147,14 +154,14 @@ $user = $userStmt->fetch(PDO::FETCH_ASSOC);
                     
                     <div class="flex justify-between text-sm">
                         <span class="text-gray-600">Shipping</span>
-                        <span class="text-gray-900">Rp 0</span>
+                        <span class="text-gray-900">Rp <?= number_format($shippingCost, 0, ',', '.') ?></span>
                     </div>
                     
                     <div class="border-t border-gray-200 mt-4 pt-4">
                         <div class="flex justify-between">
                             <span class="text-base font-medium text-gray-900">Total</span>
                             <span class="text-base font-medium text-gray-900">
-                                Rp <?= number_format($total, 0, ',', '.') ?>
+                                Rp <?= number_format($grandTotal, 0, ',', '.') ?>
                             </span>
                         </div>
                     </div>
@@ -183,18 +190,25 @@ document.addEventListener('alpine:init', () => {
             try {
                 this.isProcessing = true;
                 
+                const orderData = {
+                    shipping_address_id: this.selectedAddressId,
+                    payment_method: this.paymentMethod,
+                    shipping_cost: Number(<?= $shippingCost ?>),
+                    total_amount: Number(<?= $total ?>)
+                };
+                
+                console.log('Sending order data:', orderData);
+                
                 const response = await fetch('/orders/create', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        shipping_address_id: this.selectedAddressId,
-                        payment_method: this.paymentMethod
-                    })
+                    body: JSON.stringify(orderData)
                 });
                 
                 const result = await response.json();
+                console.log('Server response:', result);
                 
                 if (result.success) {
                     window.location.href = `/orders/${result.order_id}`;

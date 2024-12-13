@@ -9,33 +9,95 @@ class Order {
         $this->user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
     }
     
+    private function generateOrderNumber() {
+        // Format: ORD-YYYYMMDD-XXXX (e.g., ORD-20231213-0001)
+        $date = date('Ymd');
+        $prefix = "ORD-" . $date . "-";
+        
+        // Get the last order number for today
+        $sql = "SELECT order_number FROM orders 
+                WHERE order_number LIKE ? 
+                ORDER BY order_number DESC LIMIT 1";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$prefix . '%']);
+        $last = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($last) {
+            // Extract the sequence number and increment
+            $sequence = intval(substr($last['order_number'], -4)) + 1;
+        } else {
+            $sequence = 1;
+        }
+        
+        // Format with leading zeros
+        return $prefix . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+    }
+    
     public function create($data) {
         try {
             $this->db->beginTransaction();
             
+            // Validate required fields
+            if (!array_key_exists('shipping_cost', $data) || !array_key_exists('total_amount', $data)) {
+                throw new Exception('Missing required fields: shipping_cost or total_amount');
+            }
+            
+            // Generate order number
+            $orderNumber = $this->generateOrderNumber();
+            
             // Create order
             $orderQuery = "INSERT INTO orders (
+                order_number, 
                 user_id, 
-                shipping_address_id, 
-                total_amount, 
-                payment_method, 
-                status
+                shipping_address_id,
+                total_amount,
+                shipping_cost,
+                payment_method,
+                status,
+                created_at
             ) VALUES (
-                :user_id, 
-                :shipping_address_id, 
-                :total_amount, 
+                :order_number,
+                :user_id,
+                :shipping_address_id,
+                :total_amount,
+                :shipping_cost,
                 :payment_method,
-                'pending_payment'
+                'pending_payment',
+                NOW()
             )";
             
             $orderStmt = $this->db->prepare($orderQuery);
-            $orderStmt->bindParam(":user_id", $this->user_id);
-            $orderStmt->bindParam(":shipping_address_id", $data['shipping_address_id']);
-            $orderStmt->bindParam(":total_amount", $data['total_amount']);
-            $orderStmt->bindParam(":payment_method", $data['payment_method']);
-            $orderStmt->execute();
+            $orderStmt->execute([
+                ':order_number' => $orderNumber,
+                ':user_id' => $this->user_id,
+                ':shipping_address_id' => $data['shipping_address_id'],
+                ':total_amount' => floatval($data['total_amount']),
+                ':shipping_cost' => floatval($data['shipping_cost']),
+                ':payment_method' => $data['payment_method']
+            ]);
             
             $order_id = $this->db->lastInsertId();
+            
+            // Create payment details
+            $paymentQuery = "INSERT INTO payment_details (
+                order_id,
+                payment_method,
+                payment_amount,
+                created_at
+            ) VALUES (
+                :order_id,
+                :payment_method,
+                :payment_amount,
+                NOW()
+            )";
+            
+            $paymentStmt = $this->db->prepare($paymentQuery);
+            $paymentStmt->execute([
+                ':order_id' => $order_id,
+                ':payment_method' => $data['payment_method'],
+                ':payment_amount' => floatval($data['total_amount']) + floatval($data['shipping_cost'])
+            ]);
             
             // Create order items
             $itemQuery = "INSERT INTO order_items (
@@ -53,41 +115,30 @@ class Order {
             $itemStmt = $this->db->prepare($itemQuery);
             
             foreach ($data['items'] as $item) {
-                $itemStmt->bindParam(":order_id", $order_id);
-                $itemStmt->bindParam(":product_id", $item['id']);
-                $itemStmt->bindParam(":quantity", $item['quantity']);
-                $itemStmt->bindParam(":price", $item['price']);
-                $itemStmt->execute();
+                $itemStmt->execute([
+                    ':order_id' => $order_id,
+                    ':product_id' => $item['id'],
+                    ':quantity' => $item['quantity'],
+                    ':price' => $item['price']
+                ]);
             }
             
-            // Create payment details
-            $paymentQuery = "INSERT INTO payment_details (
-                order_id, 
-                payment_method, 
-                payment_amount
-            ) VALUES (
-                :order_id, 
-                :payment_method, 
-                :payment_amount
-            )";
-            
-            $paymentStmt = $this->db->prepare($paymentQuery);
-            $paymentStmt->bindParam(":order_id", $order_id);
-            $paymentStmt->bindParam(":payment_method", $data['payment_method']);
-            $paymentStmt->bindParam(":payment_amount", $data['total_amount']);
-            $paymentStmt->execute();
-            
-            // Clear cart after successful order
-            $cart = new Cart();
-            $cart->clear();
-            
             $this->db->commit();
-            return ['success' => true, 'order_id' => $order_id];
             
-        } catch (PDOException $e) {
-            $this->db->rollBack();
-            error_log("Order creation error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Error creating order'];
+            return [
+                'success' => true,
+                'order_id' => $order_id
+            ];
+            
+        } catch (Exception $e) {
+            if (isset($this->db)) {
+                $this->db->rollBack();
+            }
+            error_log("Error creating order: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
         }
     }
 
@@ -223,10 +274,14 @@ class Order {
                             a.district, a.city, a.province, a.postal_code,
                             pd.payment_method, pd.transfer_proof_url, 
                             pd.payment_date, pd.verified_at, pd.notes,
+                            sd.courier_name, sd.service_type, sd.tracking_number,
+                            sd.estimated_delivery_date,
+                            sd.shipped_at, sd.notes as shipping_notes,
                             u.email
                      FROM orders o 
                      LEFT JOIN addresses a ON o.shipping_address_id = a.id
                      LEFT JOIN payment_details pd ON o.id = pd.order_id
+                     LEFT JOIN shipping_details sd ON o.id = sd.order_id
                      LEFT JOIN users u ON o.user_id = u.id
                      WHERE o.id = :order_id AND o.user_id = :user_id";
 

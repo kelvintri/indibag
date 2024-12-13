@@ -83,6 +83,26 @@ if (strpos($path, '/admin') === 0) {
                 exit;
             }
             break;
+        case '/admin/orders/update-status':
+            AdminAuth::requireAdmin();
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                require_once ROOT_PATH . '/pages/admin/orders/update-status.php';
+                exit;
+            }
+            break;
+        case '/admin/orders/update-shipping':
+            AdminAuth::requireAdmin();
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                require_once ROOT_PATH . '/pages/admin/orders/update-shipping.php';
+                exit;
+            }
+            break;
+        case (preg_match('/^\/admin\/orders\/(\d+)$/', $path, $matches) ? true : false):
+            AdminAuth::requireAdmin();
+            header('Content-Type: application/json');
+            require_once ROOT_PATH . '/pages/admin/orders/get-order.php';
+            exit;
+            break;
     }
 }
 
@@ -91,6 +111,15 @@ switch ($path) {
     case '/':
         $pageTitle = 'Home - Bananina';
         $content = ROOT_PATH . '/pages/home.php';
+        break;
+    case '/orders/create':
+        Auth::requireLogin();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            require_once ROOT_PATH . '/includes/Cart.php';
+            require_once ROOT_PATH . '/includes/Order.php';
+            require_once ROOT_PATH . '/pages/orders/create.php';
+            exit;
+        }
         break;
     case '/products':
         $pageTitle = 'Products - Bananina';
@@ -187,37 +216,6 @@ switch ($path) {
         $pageTitle = 'Checkout - Bananina';
         $content = ROOT_PATH . '/pages/checkout.php';
         break;
-    case '/orders/create':
-        Auth::requireLogin();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            require_once ROOT_PATH . '/includes/Order.php';
-            
-            $data = json_decode(file_get_contents('php://input'), true);
-            $cart = new Cart();
-            $cartItems = $cart->getItems();
-            $total = $cart->getTotal();
-            
-            if (empty($cartItems)) {
-                header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'message' => 'Cart is empty']);
-                exit;
-            }
-            
-            $orderData = [
-                'shipping_address_id' => $data['shipping_address_id'],
-                'payment_method' => $data['payment_method'],
-                'total_amount' => $total,
-                'items' => $cartItems
-            ];
-            
-            $order = new Order();
-            $result = $order->create($orderData);
-            
-            header('Content-Type: application/json');
-            echo json_encode($result);
-            exit;
-        }
-        break;
     case (preg_match('/^\/orders\/(\d+)$/', $path, $matches) ? true : false):
         Auth::requireLogin();
         $order_id = $matches[1];
@@ -277,6 +275,12 @@ switch ($path) {
             }
             exit;
         }
+        break;
+    case (preg_match('/^\/admin\/orders\/(\d+)$/', $path, $matches) ? true : false):
+        AdminAuth::requireAdmin();
+        header('Content-Type: application/json');
+        require_once ROOT_PATH . '/pages/admin/orders/get-order.php';
+        exit;
         break;
     default:
         $pageTitle = '404 Not Found - Bananina';

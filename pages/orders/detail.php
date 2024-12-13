@@ -140,27 +140,22 @@ function getStatusStyle($status) {
                 </div>
             </div>
 
-            <!-- Payment Information -->
+            <!-- Payment Details -->
+            <?php if ($order['status'] === 'pending_payment' || $order['status'] === 'payment_uploaded'): ?>
             <div class="bg-white rounded-lg shadow-sm p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Payment Information</h2>
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Payment Details</h2>
                 <div class="space-y-4">
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Payment Method</span>
-                        <span class="text-gray-900"><?= ucwords(str_replace('_', ' ', $order['payment_method'])) ?></span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Payment Status</span>
-                        <span class="text-gray-900">
-                            <?= $order['verified_at'] ? 'Verified' : ($order['payment_date'] ? 'Uploaded' : 'Pending') ?>
-                        </span>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Payment Method</p>
+                        <p class="mt-1">
+                            <?= $order['payment_method'] ? str_replace('_', ' ', ucwords($order['payment_method'])) : '-' ?>
+                        </p>
                     </div>
                     <?php if ($order['payment_date']): ?>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Payment Date</span>
-                            <span class="text-gray-900">
-                                <?= date('F j, Y H:i', strtotime($order['payment_date'])) ?>
-                            </span>
-                        </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Payment Date</p>
+                        <p class="mt-1"><?= date('F j, Y H:i', strtotime($order['payment_date'])) ?></p>
+                    </div>
                     <?php endif; ?>
                     <?php if ($order['transfer_proof_url']): ?>
                         <div class="mt-4">
@@ -196,6 +191,7 @@ function getStatusStyle($status) {
                     <?php endif; ?>
                 </div>
             </div>
+            <?php endif; ?>
 
             <!-- Shipping Address -->
             <div class="bg-white rounded-lg shadow-sm p-6">
@@ -214,6 +210,45 @@ function getStatusStyle($status) {
                     </p>
                 </div>
             </div>
+
+            <!-- Shipping Details -->
+            <?php if ($order['status'] === 'shipped'): ?>
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Shipping Details</h2>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Courier</p>
+                            <p class="mt-1"><?= htmlspecialchars($order['courier_name']) ?></p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Service Type</p>
+                            <p class="mt-1"><?= htmlspecialchars($order['service_type'] ?? '-') ?></p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Tracking Number</p>
+                            <p class="mt-1"><?= htmlspecialchars($order['tracking_number'] ?? '-') ?></p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Shipping Cost</p>
+                            <p class="mt-1">Rp <?= number_format($order['shipping_cost'] ?? 0, 0, ',', '.') ?></p>
+                        </div>
+                    </div>
+                    <?php if ($order['estimated_delivery_date']): ?>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Estimated Delivery</p>
+                        <p class="mt-1"><?= date('F j, Y', strtotime($order['estimated_delivery_date'])) ?></p>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($order['shipping_notes']): ?>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Notes</p>
+                        <p class="mt-1 text-gray-600"><?= nl2br(htmlspecialchars($order['shipping_notes'])) ?></p>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Order Items -->
             <div class="bg-white rounded-lg shadow-sm p-6">
@@ -253,13 +288,15 @@ function getStatusStyle($status) {
                     </div>
                     <div class="flex justify-between text-sm">
                         <span class="text-gray-600">Shipping</span>
-                        <span class="text-gray-900">Rp 0</span>
+                        <span class="text-gray-900">
+                            Rp <?= number_format($order['shipping_cost'] ?? 0, 0, ',', '.') ?>
+                        </span>
                     </div>
                     <div class="border-t border-gray-200 mt-4 pt-4">
                         <div class="flex justify-between">
                             <span class="text-base font-medium text-gray-900">Total</span>
                             <span class="text-base font-medium text-gray-900">
-                                Rp <?= number_format($order['total_amount'], 0, ',', '.') ?>
+                                Rp <?= number_format($order['total_amount'] + ($order['shipping_cost'] ?? 0), 0, ',', '.') ?>
                             </span>
                         </div>
                     </div>

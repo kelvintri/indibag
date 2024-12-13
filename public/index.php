@@ -314,6 +314,13 @@ if (strpos($path, '/admin') === 0) {
             require_once ROOT_PATH . '/includes/admin-layout.php';
             exit;
             break;
+        case '/admin/products/update':
+            AdminAuth::requireAdmin();
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                require_once ROOT_PATH . '/pages/admin/update-product.php';
+                exit;
+            }
+            break;
     }
 }
 

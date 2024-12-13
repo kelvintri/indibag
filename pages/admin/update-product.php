@@ -35,11 +35,11 @@ try {
         SET name = ?, 
             description = ?, 
             category_id = ?, 
+            brand_id = ?,
             price = ?, 
             stock = ?,
             meta_title = ?,
-            meta_description = ?,
-            updated_at = NOW()
+            meta_description = ?
         WHERE id = ?
     ");
     
@@ -47,6 +47,7 @@ try {
         $_POST['name'],
         $_POST['description'],
         $_POST['category_id'],
+        $_POST['brand_id'],
         $_POST['price'],
         $_POST['stock'],
         $meta_title,
@@ -55,7 +56,7 @@ try {
     ]);
     
     // Handle image uploads
-    $upload_dir = __DIR__ . '/../../assets/images/';
+    $upload_dir = __DIR__ . '/../../public/assets/images/';
     $web_path = '/assets/images/';
     
     // Get category name for the folder path
@@ -67,7 +68,7 @@ try {
         throw new Exception("Invalid category ID");
     }
     
-    $category_folder = strtolower($category['category_name']);
+    $category_folder = strtolower(trim(preg_replace('/[^a-zA-Z0-9-]/', '-', $category['category_name'])));
     
     // Ensure category folder exists
     $category_path = $upload_dir . $category_folder;
@@ -84,11 +85,12 @@ try {
     function handleImageUpload($file, $product_id, $is_primary, $conn, $upload_dir, $web_path, $category_folder, $product_name) {
         if ($file['error'] === UPLOAD_ERR_OK) {
             $tmp_name = $file['tmp_name'];
-            $extension = 'jpg'; // Force jpg extension as per database examples
+            // Get file extension from uploaded file
+            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
             
             // Clean product name for filename (remove special characters, replace spaces with underscores)
             $clean_name = preg_replace('/[^a-zA-Z0-9\s]/', '', $product_name);
-            $clean_name = str_replace(' ', '_', trim($clean_name));
+            $clean_name = str_replace(' ', '_', trim(strtolower($clean_name)));
             
             // Generate filename following the pattern from database
             $type = $is_primary ? 'primary' : 'hover';
@@ -96,38 +98,66 @@ try {
             
             // Set upload paths
             $subfolder = $is_primary ? 'primary' : 'hover';
-            $upload_path = $upload_dir . $category_folder . '/' . $subfolder . '/' . $new_filename;
-            $web_image_path = $web_path . $category_folder . '/' . $subfolder . '/' . $new_filename;
+            $category_path = $category_folder;
+            $upload_path = $upload_dir . $category_path . '/' . $subfolder . '/' . $new_filename;
+            $web_image_path = $web_path . $category_path . '/' . $subfolder . '/' . $new_filename;
             
             // Delete old image if exists
             $stmt = $conn->prepare("SELECT image_url FROM product_galleries WHERE product_id = ? AND is_primary = ?");
             $stmt->execute([$product_id, $is_primary ? 1 : 0]);
             $old_image = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if ($old_image && file_exists(__DIR__ . '/../../' . $old_image['image_url'])) {
-                unlink(__DIR__ . '/../../' . $old_image['image_url']);
+            if ($old_image) {
+                $old_file_path = __DIR__ . '/../../public' . $old_image['image_url'];
+                error_log("Attempting to delete old file: " . $old_file_path);
+                if (file_exists($old_file_path)) {
+                    unlink($old_file_path);
+                }
+            }
+            
+            // Ensure directory exists
+            $upload_folder = dirname($upload_path);
+            if (!is_dir($upload_folder)) {
+                if (!mkdir($upload_folder, 0777, true)) {
+                    throw new Exception("Failed to create directory: " . $upload_folder);
+                }
             }
             
             // Move uploaded file
             if (!move_uploaded_file($tmp_name, $upload_path)) {
+                error_log("Failed to move file from {$tmp_name} to {$upload_path}");
+                error_log("Upload path exists: " . (file_exists(dirname($upload_path)) ? 'yes' : 'no'));
+                error_log("Upload path writable: " . (is_writable(dirname($upload_path)) ? 'yes' : 'no'));
                 throw new Exception("Failed to move uploaded file to: " . $upload_path);
             }
             
             // Update or insert into product_galleries
             $stmt = $conn->prepare("
-                INSERT INTO product_galleries (product_id, image_url, is_primary, sort_order, created_at)
-                VALUES (?, ?, ?, ?, NOW())
-                ON DUPLICATE KEY UPDATE 
-                    image_url = VALUES(image_url),
-                    updated_at = NOW()
+                UPDATE product_galleries 
+                SET image_url = ?
+                WHERE product_id = ? AND is_primary = ?
             ");
             
             $stmt->execute([
-                $product_id,
                 $web_image_path,
-                $is_primary ? 1 : 0,
-                $is_primary ? 0 : 1 // Sort order: 0 for primary, 1 for hover
+                $product_id,
+                $is_primary ? 1 : 0
             ]);
+            
+            // If no rows were updated, insert a new record
+            if ($stmt->rowCount() === 0) {
+                $stmt = $conn->prepare("
+                    INSERT INTO product_galleries (product_id, image_url, is_primary, sort_order, created_at)
+                    VALUES (?, ?, ?, ?, NOW())
+                ");
+                
+                $stmt->execute([
+                    $product_id,
+                    $web_image_path,
+                    $is_primary ? 1 : 0,
+                    $is_primary ? 0 : 1 // Sort order: 0 for primary, 1 for hover
+                ]);
+            }
             
             return true;
         }
@@ -136,6 +166,8 @@ try {
     
     // Handle primary image if uploaded
     if (isset($_FILES['primary_image']) && $_FILES['primary_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        error_log("Primary image upload attempt - Error code: " . $_FILES['primary_image']['error']);
+        error_log("Primary image temp name: " . $_FILES['primary_image']['tmp_name']);
         if (!handleImageUpload($_FILES['primary_image'], $_POST['product_id'], true, $conn, $upload_dir, $web_path, $category_folder, $_POST['name'])) {
             throw new Exception('Error uploading primary image');
         }
@@ -143,6 +175,8 @@ try {
     
     // Handle hover image if uploaded
     if (isset($_FILES['hover_image']) && $_FILES['hover_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+        error_log("Hover image upload attempt - Error code: " . $_FILES['hover_image']['error']);
+        error_log("Hover image temp name: " . $_FILES['hover_image']['tmp_name']);
         if (!handleImageUpload($_FILES['hover_image'], $_POST['product_id'], false, $conn, $upload_dir, $web_path, $category_folder, $_POST['name'])) {
             throw new Exception('Error uploading hover image');
         }

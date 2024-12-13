@@ -13,12 +13,13 @@ if (isset($_GET['edit_id'])) {
         SELECT p.*, 
                pg_primary.image_url as primary_image,
                pg_hover.image_url as hover_image,
-               b.name as brand_name
+               b.name as brand_name,
+               b.id as brand_id
         FROM products p
         LEFT JOIN product_galleries pg_primary ON p.id = pg_primary.product_id AND pg_primary.is_primary = 1
         LEFT JOIN product_galleries pg_hover ON p.id = pg_hover.product_id AND pg_hover.is_primary = 0
         LEFT JOIN brands b ON p.brand_id = b.id
-        WHERE p.id = ? AND p.deleted_at IS NULL
+        WHERE p.id = ? AND p.is_active = 1 AND p.deleted_at IS NULL
     ");
     $stmt->execute([$_GET['edit_id']]);
     $editProduct = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -34,7 +35,12 @@ if (isset($_GET['edit_id'])) {
 
 // Handle delete action
 if (isset($_POST['delete']) && isset($_POST['product_id'])) {
-    $stmt = $conn->prepare("UPDATE products SET deleted_at = NOW() WHERE id = ?");
+    $stmt = $conn->prepare("
+        UPDATE products 
+        SET is_active = 0, 
+            deleted_at = NOW()
+        WHERE id = ?
+    ");
     $stmt->execute([$_POST['product_id']]);
     
     ob_clean(); // Clear any output buffers
@@ -74,10 +80,10 @@ if ($search !== '') {
 
 // Get total products count with search
 $total_stmt = $conn->prepare("
-    SELECT COUNT(*) 
+    SELECT COUNT(DISTINCT p.id)
     FROM products p 
     LEFT JOIN categories c ON p.category_id = c.id
-    WHERE p.deleted_at IS NULL 
+    WHERE p.is_active = 1 AND p.deleted_at IS NULL
     $search_condition
 ");
 $total_stmt->execute($params);
@@ -87,12 +93,18 @@ $total_pages = ceil($total_products / $per_page);
 
 // Fetch paginated products with search and sort
 $stmt = $conn->prepare("
-    SELECT p.*, c.name as category_name, b.name as brand_name, pg.image_url
+    SELECT p.*, 
+           c.name as category_name, 
+           b.name as brand_name, 
+           (SELECT image_url 
+            FROM product_galleries 
+            WHERE product_id = p.id 
+            AND is_primary = 1 
+            LIMIT 1) as image_url
     FROM products p 
     LEFT JOIN categories c ON p.category_id = c.id 
     LEFT JOIN brands b ON p.brand_id = b.id
-    LEFT JOIN product_galleries pg ON p.id = pg.product_id AND pg.is_primary = 1
-    WHERE p.deleted_at IS NULL 
+    WHERE p.is_active = 1 AND p.deleted_at IS NULL
     $search_condition
     ORDER BY p.$sort_by $sort_order
     LIMIT :limit OFFSET :offset
@@ -113,7 +125,17 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
     showModal: false, 
     showEditModal: false, 
     isSubmitting: false,
-    editProduct: null,
+    editProduct: {
+        id: '',
+        name: '',
+        description: '',
+        category_id: '',
+        brand_id: '',
+        price: '',
+        stock: '',
+        primary_image: '',
+        hover_image: ''
+    },
     fetchProduct(id) {
         fetch(`products?edit_id=${id}`)
             .then(response => response.json())
@@ -321,7 +343,10 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                     <!-- Modal Body -->
                     <div class="p-6">
-                        <form id="editProductForm" @submit.prevent="submitEditForm()" class="space-y-4">
+                        <form id="editProductForm" 
+                              enctype="multipart/form-data"
+                              @submit.prevent="submitEditForm()" 
+                              class="space-y-4">
                             <input type="hidden" name="product_id" x-model="editProduct.id">
                             
                             <div>
@@ -380,7 +405,10 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <div class="mt-1 flex items-center space-x-4">
                                         <img x-show="editProduct.primary_image" :src="editProduct.primary_image" 
                                              class="h-20 w-20 object-cover rounded-md">
-                                        <input type="file" name="primary_image" accept="image/*"
+                                        <input type="file" 
+                                               name="primary_image" 
+                                               accept="image/*"
+                                               @change="console.log('Primary image selected:', $event.target.files[0])"
                                                class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                     </div>
                                 </div>
@@ -389,7 +417,10 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <div class="mt-1 flex items-center space-x-4">
                                         <img x-show="editProduct.hover_image" :src="editProduct.hover_image" 
                                              class="h-20 w-20 object-cover rounded-md">
-                                        <input type="file" name="hover_image" accept="image/*"
+                                        <input type="file" 
+                                               name="hover_image" 
+                                               accept="image/*"
+                                               @change="console.log('Hover image selected:', $event.target.files[0])"
                                                class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                     </div>
                                 </div>
@@ -621,11 +652,27 @@ function submitEditForm() {
     
     this.isSubmitting = true;
     
-    fetch('/admin/update-product.php', {
+    // Log the FormData contents for debugging
+    for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+    }
+    
+    fetch('/admin/products/update', {
         method: 'POST',
-        body: formData
+        body: formData,
+        headers: {
+            // Do not set Content-Type here, let the browser handle it
+        }
     })
-    .then(response => response.json())
+    .then(async response => {
+        const text = await response.text();
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            console.error('Server response:', text);
+            throw new Error('Invalid JSON response from server');
+        }
+    })
     .then(data => {
         if (data.success) {
             window.location.reload();
@@ -635,7 +682,7 @@ function submitEditForm() {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error updating product');
+        alert('Error updating product: ' + error.message);
     })
     .finally(() => {
         this.isSubmitting = false;

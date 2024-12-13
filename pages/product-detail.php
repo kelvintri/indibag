@@ -9,7 +9,7 @@ $query = "SELECT p.*, b.name as brand_name, c.name as category_name,
           FROM products p 
           LEFT JOIN brands b ON p.brand_id = b.id 
           LEFT JOIN categories c ON p.category_id = c.id 
-          WHERE p.slug = :slug AND p.is_active = 1";
+          WHERE p.slug = :slug AND p.is_active = 1 AND p.deleted_at IS NULL";
 
 $stmt = $conn->prepare($query);
 $stmt->bindParam(":slug", $slug);
@@ -17,8 +17,7 @@ $stmt->execute();
 $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$product) {
-    header("Location: /404");
-    exit;
+    return false;
 }
 
 // Get product images

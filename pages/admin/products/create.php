@@ -1,204 +1,137 @@
 <?php
-ob_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+require_once __DIR__ . '/../../../includes/AdminAuth.php';
+require_once __DIR__ . '/../../../config/database.php';
+require_once __DIR__ . '/../../../includes/helpers.php';
 
-// Set headers early
+AdminAuth::requireAdmin();
 header('Content-Type: application/json');
 
 try {
-    require_once __DIR__ . '/../../../includes/AdminAuth.php';
-    require_once __DIR__ . '/../../../config/database.php';
-    require_once __DIR__ . '/../../../includes/helpers.php';
-
-    // Debug log
-    error_log("Script path: " . __FILE__);
-    error_log("Request method: " . $_SERVER['REQUEST_METHOD']);
-    error_log("POST data: " . print_r($_POST, true));
-    error_log("FILES data: " . print_r($_FILES, true));
-
-    // Ensure we're getting a POST request
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        throw new Exception('Method not allowed');
-    }
-
-    // Check admin authentication
-    AdminAuth::requireAdmin();
-
-    // Validate required fields
-    $required_fields = ['name', 'description', 'category_id', 'brand_id', 'price', 'stock'];
-    foreach ($required_fields as $field) {
-        if (!isset($_POST[$field]) || empty($_POST[$field])) {
-            throw new Exception("Missing required field: {$field}");
-        }
-    }
-
-    // Validate files
-    if (!isset($_FILES['primary_image']) || $_FILES['primary_image']['error'] !== UPLOAD_ERR_OK) {
-        throw new Exception("Primary image is required");
-    }
-    if (!isset($_FILES['hover_image']) || $_FILES['hover_image']['error'] !== UPLOAD_ERR_OK) {
-        throw new Exception("Hover image is required");
-    }
-
     $db = new Database();
     $conn = $db->getConnection();
-    
-    // Start transaction
-    $conn->beginTransaction();
-    
-    // Get brand and category data
+
+    // Get brand and category data for meta generation
     $stmt = $conn->prepare("SELECT name FROM brands WHERE id = ?");
     $stmt->execute([$_POST['brand_id']]);
     $brand = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
     $stmt = $conn->prepare("SELECT name FROM categories WHERE id = ?");
     $stmt->execute([$_POST['category_id']]);
     $category = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
     if (!$brand || !$category) {
         throw new Exception("Invalid brand or category ID");
     }
-    
-    // Generate meta title and description if not provided
-    // Limit meta title to 100 characters (per database schema)
-    $meta_title = substr($_POST['name'] . ' | ' . strtoupper($brand['name']) . ' ' . ucfirst($category['name']), 0, 100);
 
-    // Limit meta description to 255 characters (per database schema)
-    $description_excerpt = substr($_POST['description'], 0, 150); // Shorter excerpt to allow for brand name and prefix
+    // Generate slug from name
+    $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $_POST['name'])));
+    
+    // Check if slug exists and make it unique if needed
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM products WHERE slug = ?");
+    $stmt->execute([$slug]);
+    $count = $stmt->fetchColumn();
+    
+    if ($count > 0) {
+        $originalSlug = $slug;
+        $counter = 1;
+        do {
+            $slug = $originalSlug . '-' . $counter;
+            $stmt->execute([$slug]);
+            $count = $stmt->fetchColumn();
+            $counter++;
+        } while ($count > 0);
+    }
+
+    // Generate meta title and description
+    $meta_title = substr($_POST['name'] . ' | ' . strtoupper($brand['name']) . ' ' . ucfirst($category['name']), 0, 100);
+    $description_excerpt = substr($_POST['description'], 0, 150);
     if (strlen($_POST['description']) > 150) {
         $description_excerpt .= '...';
     }
     $meta_description = substr('Shop ' . strtoupper($brand['name']) . ' ' . $_POST['name'] . '. ' . $description_excerpt, 0, 255);
-    
+
+    // Begin transaction
+    $conn->beginTransaction();
+
     // Insert product
     $stmt = $conn->prepare("
         INSERT INTO products (
-            name, description, details, category_id, brand_id, 
-            meta_title, meta_description, price, stock, 
-            created_at, updated_at
-        ) VALUES (
-            :name, :description, :details, :category_id, :brand_id,
-            :meta_title, :meta_description, :price, :stock,
-            NOW(), NOW()
+            name, slug, category_id, brand_id, description, details,
+            meta_title, meta_description, price, stock, sku,
+            condition_status, is_active, created_at
+        ) 
+        VALUES (
+            :name, :slug, :category_id, :brand_id, :description, :details,
+            :meta_title, :meta_description, :price, :stock, :sku,
+            :condition_status, :is_active, NOW()
         )
     ");
-
+    
     $stmt->execute([
         ':name' => $_POST['name'],
-        ':description' => $_POST['description'],
-        ':details' => $_POST['details'] ?? null,
+        ':slug' => $slug,
         ':category_id' => $_POST['category_id'],
-        ':brand_id' => $_POST['brand_id'],
+        ':brand_id' => $_POST['brand_id'] ?? 3,
+        ':description' => $_POST['description'],
+        ':details' => $_POST['details'] ?? 'Made in Indonesia | Gold tone Hardware | MK Logo Medallion Hang Charm | Michael Kors metal Logo Lettering',
         ':meta_title' => $meta_title,
         ':meta_description' => $meta_description,
         ':price' => $_POST['price'],
-        ':stock' => $_POST['stock']
+        ':stock' => $_POST['stock'],
+        ':sku' => $slug,
+        ':condition_status' => 'Brand new | Completeness: Care card',
+        ':is_active' => 1
     ]);
-    
+
     $product_id = $conn->lastInsertId();
-    
+
     // Handle image uploads
-    $upload_dir = __DIR__ . '/../../../assets/images/';
-    $web_path = '/assets/images/';
-    
-    // Get category name for the folder path
-    $stmt = $conn->prepare("SELECT name as category_name FROM categories WHERE id = ?");
-    $stmt->execute([$_POST['category_id']]);
-    $category = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$category) {
-        throw new Exception("Invalid category ID");
-    }
-    
-    $category_folder = strtolower($category['category_name']);
-    
-    // Ensure upload directories exist
-    $category_path = $upload_dir . $category_folder;
-    foreach (['', '/primary', '/hover'] as $subfolder) {
-        $dir_path = $category_path . $subfolder;
-        if (!is_dir($dir_path)) {
-            if (!mkdir($dir_path, 0777, true)) {
-                throw new Exception("Failed to create directory: " . $dir_path);
+    foreach (['primary_image' => true, 'hover_image' => false] as $field => $is_primary) {
+        if (isset($_FILES[$field]) && $_FILES[$field]['error'] === UPLOAD_ERR_OK) {
+            $category_folder = strtolower($category['name']);
+            $base_upload_dir = ROOT_PATH . '/public/assets/images/' . $category_folder;
+            $upload_dir = $base_upload_dir . ($is_primary ? '/primary/' : '/hover/');
+            
+            // Clean filename
+            $clean_name = preg_replace('/[^a-zA-Z0-9\s]/', '', $_POST['name']);
+            $clean_name = str_replace(' ', '_', trim(strtolower($clean_name)));
+            
+            // Generate paths
+            $filename = $clean_name . ($is_primary ? '_primary.jpg' : '_hover.jpg');
+            $upload_path = $upload_dir . $filename;
+            $web_path = '/assets/images/' . $category_folder . ($is_primary ? '/primary/' : '/hover/') . $filename;
+
+            // Create directories if needed
+            if (!is_dir($base_upload_dir)) {
+                mkdir($base_upload_dir, 0777, true);
             }
-        }
-    }
-    
-    // Function to handle image upload
-    function handleImageUpload($file, $product_id, $is_primary, $conn, $upload_dir, $web_path, $category_folder, $product_name) {
-        if ($file['error'] === UPLOAD_ERR_OK) {
-            $tmp_name = $file['tmp_name'];
-            $extension = 'jpg'; // Force jpg extension as per database examples
-            
-            // Clean product name for filename (remove special characters, replace spaces with underscores)
-            $clean_name = preg_replace('/[^a-zA-Z0-9\s]/', '', $product_name);
-            $clean_name = str_replace(' ', '_', trim($clean_name));
-            
-            // Generate filename following the pattern from database
-            $type = $is_primary ? 'primary' : 'hover';
-            $new_filename = $clean_name . "_{$type}.{$extension}";
-            
-            // Set upload paths
-            $subfolder = $is_primary ? 'primary' : 'hover';
-            $upload_path = $upload_dir . $category_folder . '/' . $subfolder . '/' . $new_filename;
-            $web_image_path = $web_path . $category_folder . '/' . $subfolder . '/' . $new_filename;
-            
-            // Move uploaded file
-            if (!move_uploaded_file($tmp_name, $upload_path)) {
-                throw new Exception("Failed to move uploaded file to: " . $upload_path);
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0777, true);
             }
-            
+
+            // Upload file
+            if (!move_uploaded_file($_FILES[$field]['tmp_name'], $upload_path)) {
+                throw new Exception('Failed to move ' . ($is_primary ? 'primary' : 'hover') . ' image');
+            }
+
             // Insert into product_galleries
             $stmt = $conn->prepare("
                 INSERT INTO product_galleries (product_id, image_url, is_primary, sort_order, created_at)
                 VALUES (?, ?, ?, ?, NOW())
             ");
-            $stmt->execute([
-                $product_id, 
-                $web_image_path, 
-                $is_primary ? 1 : 0,
-                $is_primary ? 0 : 1 // Sort order: 0 for primary, 1 for hover
-            ]);
-            
-            return true;
+            $stmt->execute([$product_id, $web_path, $is_primary ? 1 : 0, $is_primary ? 0 : 1]);
         }
-        return false;
     }
-    
-    // Handle primary image
-    if (!handleImageUpload($_FILES['primary_image'], $product_id, true, $conn, $upload_dir, $web_path, $category_folder, $_POST['name'])) {
-        throw new Exception('Error uploading primary image');
-    }
-    
-    // Handle hover image
-    if (!handleImageUpload($_FILES['hover_image'], $product_id, false, $conn, $upload_dir, $web_path, $category_folder, $_POST['name'])) {
-        throw new Exception('Error uploading hover image');
-    }
-    
-    // Commit transaction
+
     $conn->commit();
-    
-    // Clear any output and send success response
-    ob_clean();
     echo json_encode(['success' => true]);
-    
+
 } catch (Exception $e) {
-    // Rollback transaction if exists
     if (isset($conn)) {
         $conn->rollBack();
     }
-    
-    // Log error
-    error_log("Product creation error: " . $e->getMessage());
-    error_log("Stack trace: " . $e->getTraceAsString());
-    
-    // Clear any output and send error response
-    ob_clean();
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()
     ]);
-    exit;
-} finally {
-    ob_end_flush();
 }

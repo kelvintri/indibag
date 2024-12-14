@@ -106,11 +106,22 @@ if (strpos($path, '/admin') === 0) {
     }
 }
 
+// At the top of the file, add a helper function
+function renderPage($filePath) {
+    ob_start();
+    $result = include($filePath);
+    if ($result === false) {
+        ob_end_clean();
+        return false;
+    }
+    return ob_get_clean();
+}
+
 // Regular routes
 switch ($path) {
     case '/':
         $pageTitle = 'Home - Bananina';
-        $content = ROOT_PATH . '/pages/home.php';
+        $content = renderPage(ROOT_PATH . '/pages/home.php');
         break;
     case '/orders/create':
         Auth::requireLogin();
@@ -123,15 +134,15 @@ switch ($path) {
         break;
     case '/products':
         $pageTitle = 'Products - Bananina';
-        $content = ROOT_PATH . '/pages/products.php';
+        $content = renderPage(ROOT_PATH . '/pages/products.php');
         break;
     case '/categories':
         $pageTitle = 'Categories - Bananina';
-        $content = ROOT_PATH . '/pages/categories.php';
+        $content = renderPage(ROOT_PATH . '/pages/categories.php');
         break;
     case '/cart':
         $pageTitle = 'Shopping Cart - Bananina';
-        $content = ROOT_PATH . '/pages/cart.php';
+        $content = renderPage(ROOT_PATH . '/pages/cart.php');
         break;
     case '/cart/add':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -146,11 +157,11 @@ switch ($path) {
         break;
     case '/login':
         $pageTitle = 'Login - Bananina';
-        $content = ROOT_PATH . '/pages/login.php';
+        $content = renderPage(ROOT_PATH . '/pages/login.php');
         break;
     case '/register':
         $pageTitle = 'Register - Bananina';
-        $content = ROOT_PATH . '/pages/register.php';
+        $content = renderPage(ROOT_PATH . '/pages/register.php');
         break;
     case '/logout':
         $auth = new Auth();
@@ -165,8 +176,8 @@ switch ($path) {
     case (preg_match('/^\/products\/[\w-]+$/', $path) ? true : false):
         $slug = basename($path);
         $pageTitle = 'Product Details - Bananina';
-        $content = ROOT_PATH . '/pages/product-detail.php';
-        if (!include($content)) {
+        $content = renderPage(ROOT_PATH . '/pages/product-detail.php');
+        if ($content === false) {
             header('Location: /404');
             exit;
         }
@@ -190,7 +201,7 @@ switch ($path) {
     case '/profile':
         Auth::requireLogin();
         $pageTitle = 'Profile - Bananina';
-        $content = ROOT_PATH . '/pages/profile/index.php';
+        $content = renderPage(ROOT_PATH . '/pages/profile/index.php');
         break;
     case '/profile/addresses':
         Auth::requireLogin();
@@ -199,11 +210,11 @@ switch ($path) {
             $action = $_POST['action'] ?? '';
             if (in_array($action, ['add', 'edit', 'delete'])) {
                 require_once ROOT_PATH . '/pages/profile/addresses.php';
-                exit; // Important: exit after handling AJAX request
+                exit;
             }
         }
         $pageTitle = 'Manage Addresses - Bananina';
-        $content = ROOT_PATH . '/pages/profile/addresses.php';
+        $content = renderPage(ROOT_PATH . '/pages/profile/addresses.php');
         break;
     case '/checkout':
         Auth::requireLogin();
@@ -214,7 +225,7 @@ switch ($path) {
             exit;
         }
         $pageTitle = 'Checkout - Bananina';
-        $content = ROOT_PATH . '/pages/checkout.php';
+        $content = renderPage(ROOT_PATH . '/pages/checkout.php');
         break;
     case (preg_match('/^\/orders\/(\d+)$/', $path, $matches) ? true : false):
         Auth::requireLogin();
@@ -229,16 +240,16 @@ switch ($path) {
         
         if (!$order) {
             $pageTitle = '404 Not Found - Bananina';
-            $content = ROOT_PATH . '/pages/404.php';
+            $content = renderPage(ROOT_PATH . '/pages/404.php');
         } else {
             $pageTitle = 'Order Details - Bananina';
-            $content = ROOT_PATH . '/pages/orders/detail.php';
+            $content = renderPage(ROOT_PATH . '/pages/orders/detail.php');
         }
         break;
     case '/orders':
         Auth::requireLogin();
         $pageTitle = 'My Orders - Bananina';
-        $content = ROOT_PATH . '/pages/orders/index.php';
+        $content = renderPage(ROOT_PATH . '/pages/orders/index.php');
         break;
     case '/orders/upload-payment':
         Auth::requireLogin();
@@ -284,9 +295,14 @@ switch ($path) {
         break;
     default:
         $pageTitle = '404 Not Found - Bananina';
-        $content = ROOT_PATH . '/pages/404.php';
+        $content = renderPage(ROOT_PATH . '/pages/404.php');
         break;
 }
 
-// Include the main layout for non-admin routes
-require_once ROOT_PATH . '/layouts/main.php'; 
+// Include the main layout if content is available
+if ($content !== false) {
+    require_once ROOT_PATH . '/layouts/main.php';
+} else {
+    header('Location: /404');
+    exit;
+} 

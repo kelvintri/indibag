@@ -43,8 +43,9 @@ $relatedStmt->bindParam(":category_id", $product['category_id']);
 $relatedStmt->bindParam(":product_id", $product['id']);
 $relatedStmt->execute();
 $relatedProducts = $relatedStmt->fetchAll(PDO::FETCH_ASSOC);
-?>
 
+// Output the HTML directly, no need for ob_start/ob_get_clean
+?>
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <nav class="flex mb-8" aria-label="Breadcrumb">
         <ol class="inline-flex items-center space-x-1 md:space-x-3">
@@ -256,4 +257,7 @@ $relatedProducts = $relatedStmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
     <?php endif; ?>
-</div> 
+</div>
+<?php
+return true; // Indicate successful rendering
+?> 

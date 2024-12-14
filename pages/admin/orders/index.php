@@ -275,15 +275,27 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div class="flex items-center space-x-3">
                             <button @click="viewOrder(<?= $order['id'] ?>)"
-                                    class="text-blue-600 hover:text-blue-900">
-                                View
+                                    class="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50"
+                                    title="View Order Details">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
                             </button>
+
                             <button @click="order = { id: <?= $order['id'] ?>, status: '<?= $order['status'] ?>' }; 
                                     newStatus = '<?= $order['status'] ?>'; 
                                     showStatusForm = true"
-                                    class="text-green-600 hover:text-green-900">
-                                Update Status
+                                    class="text-green-600 hover:text-green-900 p-1 rounded-full hover:bg-green-50"
+                                    title="Update Order Status">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
                             </button>
+
                             <button @click="order = { id: <?= $order['id'] ?> }; 
                                     shippingDetails = {
                                         courier_name: '',
@@ -294,8 +306,12 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         notes: ''
                                     };
                                     showShippingForm = true"
-                                    class="text-purple-600 hover:text-purple-900">
-                                Shipping
+                                    class="text-purple-600 hover:text-purple-900 p-1 rounded-full hover:bg-purple-50"
+                                    title="Update Shipping Details">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                          d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                </svg>
                             </button>
                         </div>
                     </td>
@@ -307,7 +323,85 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <!-- Pagination -->
         <?php if ($total_pages > 1): ?>
             <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                <!-- Add pagination component similar to products page -->
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 flex justify-between sm:hidden">
+                        <?php if ($page > 1): ?>
+                            <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page - 1])) ?>" 
+                               class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                Previous
+                            </a>
+                        <?php endif; ?>
+                        <?php if ($page < $total_pages): ?>
+                            <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>" 
+                               class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                Next
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm text-gray-700">
+                                Showing
+                                <span class="font-medium"><?= $offset + 1 ?></span>
+                                to
+                                <span class="font-medium"><?= min($offset + $per_page, $total_orders) ?></span>
+                                of
+                                <span class="font-medium"><?= $total_orders ?></span>
+                                results
+                            </p>
+                        </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                <?php if ($page > 1): ?>
+                                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page - 1])) ?>" 
+                                       class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">Previous</span>
+                                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                        </svg>
+                                    </a>
+                                <?php endif; ?>
+
+                                <?php
+                                $start = max(1, $page - 2);
+                                $end = min($total_pages, $page + 2);
+                                
+                                if ($start > 1): ?>
+                                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => 1])) ?>" 
+                                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">1</a>
+                                    <?php if ($start > 2): ?>
+                                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+
+                                <?php for ($i = $start; $i <= $end; $i++): ?>
+                                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>" 
+                                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium <?= $i === $page ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:bg-gray-50' ?>">
+                                        <?= $i ?>
+                                    </a>
+                                <?php endfor; ?>
+
+                                <?php if ($end < $total_pages): ?>
+                                    <?php if ($end < $total_pages - 1): ?>
+                                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
+                                    <?php endif; ?>
+                                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => $total_pages])) ?>" 
+                                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"><?= $total_pages ?></a>
+                                <?php endif; ?>
+
+                                <?php if ($page < $total_pages): ?>
+                                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>" 
+                                       class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">Next</span>
+                                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                        </svg>
+                                    </a>
+                                <?php endif; ?>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
             </div>
         <?php endif; ?>
     </div>

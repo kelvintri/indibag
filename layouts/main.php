@@ -23,7 +23,13 @@
 
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-8">
-        <?php require_once $content; ?>
+        <?php 
+        if (is_string($content)) {
+            echo $content;
+        } else {
+            include $content;
+        }
+        ?>
     </main>
 
     <!-- Footer -->

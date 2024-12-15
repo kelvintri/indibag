@@ -209,6 +209,16 @@ try {
                 require_once $api_file;
                 exit;
 
+            case (preg_match('/^admin\/orders\/(\d+)\/verify-payment$/', $api_path, $matches) ? true : false):
+                $api_file = ROOT_PATH . '/api/v1/admin/orders/verify-payment.php';
+                if (!file_exists($api_file)) {
+                    error_log('Admin payment verification file not found at: ' . $api_file);
+                    throw new Exception('API endpoint file not found');
+                }
+                $_GET['id'] = $matches[1];
+                require_once $api_file;
+                exit;
+
             case 'user/profile':
                 $api_file = ROOT_PATH . '/api/v1/user/profile.php';
                 if (!file_exists($api_file)) {
@@ -250,6 +260,35 @@ try {
                 $api_file = ROOT_PATH . '/api/v1/orders/refund.php';
                 if (!file_exists($api_file)) {
                     error_log('Order refund file not found at: ' . $api_file);
+                    throw new Exception('API endpoint file not found');
+                }
+                $_GET['id'] = $matches[1];
+                require_once $api_file;
+                exit;
+
+            case 'admin/orders':
+                $api_file = ROOT_PATH . '/api/v1/admin/orders/index.php';
+                if (!file_exists($api_file)) {
+                    error_log('Admin orders list file not found at: ' . $api_file);
+                    throw new Exception('API endpoint file not found');
+                }
+                require_once $api_file;
+                exit;
+
+            case (preg_match('/^admin\/orders\/(\d+)\/status$/', $api_path, $matches) ? true : false):
+                $api_file = ROOT_PATH . '/api/v1/admin/orders/update-status.php';
+                if (!file_exists($api_file)) {
+                    error_log('Admin order status update file not found at: ' . $api_file);
+                    throw new Exception('API endpoint file not found');
+                }
+                $_GET['id'] = $matches[1];
+                require_once $api_file;
+                exit;
+
+            case (preg_match('/^admin\/orders\/(\d+)\/verify-payment$/', $api_path, $matches) ? true : false):
+                $api_file = ROOT_PATH . '/api/v1/admin/orders/verify-payment.php';
+                if (!file_exists($api_file)) {
+                    error_log('Admin payment verification file not found at: ' . $api_file);
                     throw new Exception('API endpoint file not found');
                 }
                 $_GET['id'] = $matches[1];

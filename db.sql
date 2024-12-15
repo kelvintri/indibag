@@ -105,13 +105,9 @@ CREATE TABLE `cart` (
   KEY `product_id` (`product_id`),
   CONSTRAINT `cart_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
   CONSTRAINT `cart_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `cart` */
-
-insert  into `cart`(`id`,`user_id`,`product_id`,`quantity`,`created_at`) values 
-(21,4,2,1,'2024-12-11 09:22:37'),
-(22,3,23,1,'2024-12-11 11:12:26');
 
 /*Table structure for table `categories` */
 
@@ -154,13 +150,18 @@ CREATE TABLE `order_items` (
   KEY `product_id` (`product_id`),
   CONSTRAINT `order_items_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`),
   CONSTRAINT `order_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `order_items` */
 
 insert  into `order_items`(`id`,`order_id`,`product_id`,`quantity`,`price`) values 
 (1,1,1,1,1850000.00),
-(2,1,6,6,1950000.00);
+(2,1,6,6,1950000.00),
+(3,2,2,1,2500000.00),
+(4,3,1464,5,4250000.00),
+(5,4,1464,1,4250000.00),
+(6,4,1465,1,3000000.00),
+(7,4,1466,1,2550000.00);
 
 /*Table structure for table `order_status_history` */
 
@@ -178,9 +179,15 @@ CREATE TABLE `order_status_history` (
   KEY `changed_by` (`changed_by`),
   CONSTRAINT `order_status_history_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`),
   CONSTRAINT `order_status_history_ibfk_2` FOREIGN KEY (`changed_by`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `order_status_history` */
+
+insert  into `order_status_history`(`id`,`order_id`,`status`,`notes`,`changed_by`,`created_at`) values 
+(1,2,'payment_verified','done',3,'2024-12-13 15:01:19'),
+(2,2,'processing','',3,'2024-12-13 15:05:48'),
+(3,1,'payment_verified','',3,'2024-12-13 15:17:53'),
+(4,2,'shipped','Shipping details updated: JNT - JNYSASJDl72831',3,'2024-12-13 15:56:02');
 
 /*Table structure for table `orders` */
 
@@ -188,27 +195,33 @@ DROP TABLE IF EXISTS `orders`;
 
 CREATE TABLE `orders` (
   `id` int NOT NULL AUTO_INCREMENT,
+  `order_number` varchar(20) DEFAULT NULL,
   `user_id` int DEFAULT NULL,
   `shipping_address_id` int DEFAULT NULL,
   `billing_address_id` int DEFAULT NULL,
   `total_amount` decimal(10,2) NOT NULL,
+  `shipping_cost` decimal(10,2) NOT NULL DEFAULT '0.00',
   `payment_method` enum('bank_transfer','e-wallet') NOT NULL,
   `status` enum('pending_payment','payment_uploaded','payment_verified','processing','shipped','delivered','cancelled','refunded') DEFAULT 'pending_payment',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_order_number` (`order_number`),
   KEY `user_id` (`user_id`),
   KEY `shipping_address_id` (`shipping_address_id`),
   KEY `billing_address_id` (`billing_address_id`),
   CONSTRAINT `orders_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
   CONSTRAINT `orders_ibfk_2` FOREIGN KEY (`shipping_address_id`) REFERENCES `addresses` (`id`),
   CONSTRAINT `orders_ibfk_3` FOREIGN KEY (`billing_address_id`) REFERENCES `addresses` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `orders` */
 
-insert  into `orders`(`id`,`user_id`,`shipping_address_id`,`billing_address_id`,`total_amount`,`payment_method`,`status`,`created_at`,`updated_at`) values 
-(1,4,6,NULL,13550000.00,'bank_transfer','payment_uploaded','2024-12-10 14:47:16','2024-12-10 16:32:26');
+insert  into `orders`(`id`,`order_number`,`user_id`,`shipping_address_id`,`billing_address_id`,`total_amount`,`shipping_cost`,`payment_method`,`status`,`created_at`,`updated_at`) values 
+(1,'ORD-20241213-0000',4,6,NULL,13550000.00,50000.00,'bank_transfer','payment_verified','2024-12-10 14:47:16','2024-12-13 16:15:49'),
+(2,'ORD-20241213-0001',4,6,NULL,2500000.00,50000.00,'bank_transfer','shipped','2024-12-13 14:28:47','2024-12-13 16:15:41'),
+(3,'ORD-20241213-0002',4,4,NULL,21250000.00,250000.00,'e-wallet','pending_payment','2024-12-13 16:27:53','2024-12-13 16:27:53'),
+(4,'ORD-20241213-0003',4,4,NULL,9800000.00,150000.00,'e-wallet','payment_uploaded','2024-12-13 16:39:35','2024-12-13 16:40:06');
 
 /*Table structure for table `payment_details` */
 
@@ -231,12 +244,15 @@ CREATE TABLE `payment_details` (
   KEY `verified_by` (`verified_by`),
   CONSTRAINT `payment_details_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`),
   CONSTRAINT `payment_details_ibfk_2` FOREIGN KEY (`verified_by`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `payment_details` */
 
 insert  into `payment_details`(`id`,`order_id`,`payment_method`,`transfer_proof_url`,`payment_amount`,`payment_date`,`verified_by`,`verified_at`,`notes`,`created_at`,`updated_at`) values 
-(1,1,'bank_transfer','/assets/uploads/payments/payment_1_1733821018.jpg',13550000.00,'2024-12-10 16:56:58',NULL,NULL,NULL,'2024-12-10 14:47:16','2024-12-10 16:56:58');
+(1,1,'bank_transfer','/assets/uploads/payments/payment_1_1733821018.jpg',13550000.00,'2024-12-10 16:56:58',3,'2024-12-13 15:17:53',NULL,'2024-12-10 14:47:16','2024-12-13 15:17:53'),
+(2,2,'bank_transfer','/assets/uploads/payments/payment_2_1734071337.png',2500000.00,'2024-12-13 14:28:57',3,'2024-12-13 15:01:19',NULL,'2024-12-13 14:28:47','2024-12-13 15:01:19'),
+(3,3,'e-wallet','',13550000.00,'2024-12-10 16:56:58',3,'2024-12-13 15:17:53',NULL,'2024-12-10 14:47:16','2024-12-13 16:38:52'),
+(4,4,'e-wallet','/assets/uploads/payments/payment_4_1734079206.png',9950000.00,'2024-12-13 16:40:06',NULL,NULL,NULL,'2024-12-13 16:39:35','2024-12-13 16:40:06');
 
 /*Table structure for table `product_galleries` */
 
@@ -252,7 +268,7 @@ CREATE TABLE `product_galleries` (
   PRIMARY KEY (`id`),
   KEY `idx_product_gallery` (`product_id`,`is_primary`),
   CONSTRAINT `product_galleries_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3156 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3184 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `product_galleries` */
 
@@ -2600,8 +2616,7 @@ insert  into `product_galleries`(`id`,`product_id`,`image_url`,`is_primary`,`sor
 (2854,1462,'/assets/images/totes/hover/Signature Jet Set Two Tone Medium Tote Black Multi_hover.jpg',0,1,'2024-12-11 13:46:05'),
 (2855,1463,'/assets/images/totes/primary/Signature Jet Set Two Tone Medium Tote Deer Multi_primary.jpg',1,0,'2024-12-11 13:46:05'),
 (2856,1463,'/assets/images/totes/hover/Signature Jet Set Two Tone Medium Tote Deer Multi_hover.jpg',0,1,'2024-12-11 13:46:05'),
-(2857,1464,'/assets/images/totes/primary/Ella Nylon Printed Mini Tote Blue_primary.jpg',1,0,'2024-12-11 13:46:05'),
-(2858,1464,'/assets/images/totes/hover/Ella Nylon Printed Mini Tote Blue_hover.jpg',0,1,'2024-12-11 13:46:05'),
+(2857,1464,'/assets/images/totes/primary/ella_nylon_printed_mini_tote_blue_primary.jpg',1,0,'2024-12-11 13:46:05'),
 (2859,1465,'/assets/images/totes/primary/Bleecker Medium Crossbody Tote Aegean Tea_primary.jpg',1,0,'2024-12-11 13:46:05'),
 (2860,1465,'/assets/images/totes/hover/Bleecker Medium Crossbody Tote Aegean Tea_hover.jpg',0,1,'2024-12-11 13:46:05'),
 (2861,1466,'/assets/images/totes/primary/Jet Set Travel Leather Medium Double Pocket Tote Black Gold_primary.jpg',1,0,'2024-12-11 13:46:05'),
@@ -2898,7 +2913,12 @@ insert  into `product_galleries`(`id`,`product_id`,`image_url`,`is_primary`,`sor
 (3152,1613,'/assets/images/totes/primary/Ella Printed Tote Rayure Fleurie_primary.jpg',1,0,'2024-12-11 13:46:05'),
 (3153,1613,'/assets/images/totes/hover/Ella Printed Tote Rayure Fleurie_hover.jpg',0,1,'2024-12-11 13:46:05'),
 (3154,1614,'/assets/images/totes/primary/Signature Jet Set Travel Medium Carryall Tote Beige Ebony_primary.jpg',1,0,'2024-12-11 13:46:05'),
-(3155,1614,'/assets/images/totes/hover/Signature Jet Set Travel Medium Carryall Tote Beige Ebony_hover.jpg',0,1,'2024-12-11 13:46:05');
+(3155,1614,'/assets/images/totes/hover/Signature Jet Set Travel Medium Carryall Tote Beige Ebony_hover.jpg',0,1,'2024-12-11 13:46:05'),
+(3177,1622,'/assets/images/travel/primary/razer_kiyo_pro_1_primary.jpg',1,0,'2024-12-13 13:22:21'),
+(3178,1622,'/assets/images/travel/hover/razer_kiyo_pro_1_hover.jpg',0,1,'2024-12-13 13:22:21'),
+(3180,1464,'/assets/images/totes/hover/ella_nylon_printed_mini_tote_blue_hover.jpg',0,1,'2024-12-13 13:32:30'),
+(3181,1623,'/assets/images/laptop/primary/ducky_one_3_sf_primary.jpg',1,0,'2024-12-13 13:44:28'),
+(3182,1623,'/assets/images/laptop/hover/ducky_one_3_sf_hover.jpg',0,1,'2024-12-13 13:44:28');
 
 /*Table structure for table `products` */
 
@@ -2933,7 +2953,7 @@ CREATE TABLE `products` (
   KEY `idx_active_deleted` (`is_active`,`deleted_at`),
   CONSTRAINT `products_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`),
   CONSTRAINT `products_ibfk_2` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1615 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1624 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `products` */
 
@@ -4110,7 +4130,7 @@ insert  into `products`(`id`,`category_id`,`brand_id`,`name`,`slug`,`description
 (1461,28,2,'Chelsea Tote Black','chelsea-tote-black','Made from durable & lightweight nylon, this Kate Spade Chelsea Tote Bag combines practicality with timeless elegance in a design that is equally well-suited for work, travel and leisure.','Made In Philippines | Style Number : KC527 | Gold Tone Hardware | Zip Closure | Polyester Lining | 2 Slip Pocket | 1 Zip Pocket | 1 Slip Compartment with Button | 2 Side Pockets | 1 Zip Pocket at Front | 1 Zip Compartment | 1 Slip Compartment at Back | Double Handle Drop 35 cm | Metal Pinmount Logo','Chelsea Tote Black | KATE SPADE Totes','Shop KATE SPADE Chelsea Tote Black. Made from durable & lightweight nylon, this Kate Spade Chelsea Tote Bag combines practicality with timeless elegance in a design that is equally well-suited for work, travel and leisure.',3500000.00,NULL,10,'chelsea-tote-black','Brand new',1,NULL,'2024-12-11 13:46:05','2024-12-11 13:46:05'),
 (1462,28,3,'Signature Jet Set Two Tone Medium Tote Black Multi','signature-jet-set-two-tone-medium-tote-black-multi','Made of signature coated canvas and smooth leather. The bag features a zip closure that opens to polyester lining with interior one zip pocket and exterior one slip pocket at back.','Made in indonesia | Style number 35F4GTVT6V | Gold tone hardware | Siganture coated canvas and smooth leather | Zip closure | Polyester lining | Interior 1 zip pocket | Exterior 1 slip pocket at back | Handle drop 27 cm | Michael kors metal logo lettering','Signature Jet Set Two Tone Medium Tote Black Multi | MICHAEL KORS Totes','Shop MICHAEL KORS Signature Jet Set Two Tone Medium Tote Black Multi. Made of signature coated canvas and smooth leather. The bag features a zip closure that opens to polyester lining with interior one zip pocket and exterior one slip pocket at back.',2300000.00,NULL,10,'signature-jet-set-two-tone-medium-tote-black-multi','New With Tag',1,NULL,'2024-12-11 13:46:05','2024-12-11 13:46:05'),
 (1463,28,3,'Signature Jet Set Two Tone Medium Tote Deer Multi','signature-jet-set-two-tone-medium-tote-deer-multi','Made of signature coated canvas and smooth leather. The bag features a zip closure that opens to polyester lining with interior one zip pocket and exterior one slip pocket at back.','Made in indonesia | Style number 35F4GTVT6V | Gold tone hardware | Siganture coated canvas and smooth leather | Zip closure | Polyester lining | Interior 1 zip pocket | Exterior 1 slip pocket at back | Handle drop 27 cm | Michael kors metal logo lettering','Signature Jet Set Two Tone Medium Tote Deer Multi | MICHAEL KORS Totes','Shop MICHAEL KORS Signature Jet Set Two Tone Medium Tote Deer Multi. Made of signature coated canvas and smooth leather. The bag features a zip closure that opens to polyester lining with interior one zip pocket and exterior one slip pocket at back.',2300000.00,NULL,10,'signature-jet-set-two-tone-medium-tote-deer-multi','New With Tag',1,NULL,'2024-12-11 13:46:05','2024-12-11 13:46:05'),
-(1464,28,542,'Ella Nylon Printed Mini Tote Blue','ella-nylon-printed-mini-tote-blue','Made of nylon with fabric lining. The bag features an open zip closure, gold tone hardware, one slip pocket and adjustable or removable crossbody wear.','Made in Cambodia | Open zip closure | Gold tone hardware | Double handles','Ella Nylon Printed Mini Tote Blue | TORY BURCH Totes','Shop TORY BURCH Ella Nylon Printed Mini Tote Blue. Made of nylon with fabric lining. The bag features an open zip closure, gold tone hardware, one slip pocket and adjustable or removable crossbody wear.',4200000.00,NULL,10,'ella-nylon-printed-mini-tote-blue-129379','Brand new',1,NULL,'2024-12-11 13:46:05','2024-12-11 13:46:05'),
+(1464,28,542,'Ella Nylon Printed Mini Tote Blue','ella-nylon-printed-mini-tote-blue','Made of nylon with fabric lining. The bag features an open zip closure, gold tone hardware, one slip pocket and adjustable or removable crossbody wear.','Made in Cambodia | Open zip closure | Gold tone hardware | Double handles','Ella Nylon Printed Mini Tote Blue | TORY BURCH Totes','Shop TORY BURCH Ella Nylon Printed Mini Tote Blue. Made of nylon with fabric lining. The bag features an open zip closure, gold tone hardware, one slip pocket and adjustable or removable crossbody wear.',4250000.00,NULL,11,'ella-nylon-printed-mini-tote-blue-129379','Brand new',1,NULL,'2024-12-11 13:46:05','2024-12-13 11:28:38'),
 (1465,28,2,'Bleecker Medium Crossbody Tote Aegean Tea','bleecker-medium-crossbody-tote-aegean-tea','Made of saffiano leather with saffiano and logo polyetser lining. The bag features an open button magnetic snap closure, old english brass tone hardware, and 1 center zip pocket.','Made in Vietnam | Style number : KC925 | Open button magnetic snap closure | Old english brass tone hardware | Adjustable/removable crossbody tote wear | Metal logo lettering at top center','Bleecker Medium Crossbody Tote Aegean Tea | KATE SPADE Totes','Shop KATE SPADE Bleecker Medium Crossbody Tote Aegean Tea. Made of saffiano leather with saffiano and logo polyetser lining. The bag features an open button magnetic snap closure, old english brass tone hardware, and 1 center zip pocket.',3000000.00,NULL,10,'bleecker-medium-crossbody-tote-aegean-tea','Brand new',1,NULL,'2024-12-11 13:46:05','2024-12-11 13:46:05'),
 (1466,28,3,'Jet Set Travel Leather Medium Double Pocket Tote Black Gold','jet-set-travel-leather-medium-double-pocket-tote-black-gold','Made of pebbled leather. The bag features a zip closure that opens to polyester lining with one zip pocket, two slip pockets, exterior two slip pockets at front, adjustable double handles strap.','Made in Indonesia | Style Number : 35F3GTVT8B | Gold-Tone Hardware | Zip Closure | Polyester Lining | One Zip Pocket | Two Slip Pockets | Two Slip Pockets at Front | Adjustable Double Handles Strap | Michael Kors Metal Logo','Jet Set Travel Leather Medium Double Pocket Tote Black Gold | MICHAEL KORS Totes','Shop MICHAEL KORS Jet Set Travel Leather Medium Double Pocket Tote Black Gold. Made of pebbled leather. The bag features a zip closure that opens to polyester lining with one zip pocket, two slip pockets, exterior two slip pockets at front, adjustable dou',2550000.00,NULL,10,'jet-set-travel-leather-medium-double-pocket-tote-black-gold-129119','New With Tag',1,NULL,'2024-12-11 13:46:05','2024-12-11 13:46:05'),
 (1467,28,2,'Camden Quilted Small Tote Kelp Forest','camden-quilted-small-tote-kelp-forest','Made of quilted polyester with polyester lining. The bag features an open zip closure, matte argento tone hardware, one zip pocket, two slip pockets, two side eksterior slip pockets and one eksterior front zip pocket.','Made in Vietnam | Style number : KI383 | Open zip closure | Double handles | Metal logo lettering at top center','Camden Quilted Small Tote Kelp Forest | KATE SPADE Totes','Shop KATE SPADE Camden Quilted Small Tote Kelp Forest. Made of quilted polyester with polyester lining. The bag features an open zip closure, matte argento tone hardware, one zip pocket, two slip pockets, two side eksterior slip pockets and one eksterior ',3950000.00,NULL,10,'camden-quilted-small-tote-kelp-fores','Brand new',1,NULL,'2024-12-11 13:46:05','2024-12-11 13:46:05'),
@@ -4259,7 +4279,13 @@ insert  into `products`(`id`,`category_id`,`brand_id`,`name`,`slug`,`description
 (1611,28,359,'Paris Kristen Canvas Tote Bag Black Gold Metallic','paris-kristen-canvas-tote-bag-black-gold-metallic','Made of canvas. The bag features a zip closure that opens to canvas lining with interior one slip pocket.','Made in Cambodia | Style number LH2BG807 | Gold tonehardware | Top zip closure | Interior slip pocket | Handles drop 26 cm','Paris Kristen Canvas Tote Bag Black Gold Metallic | KARL LAGERFELD Totes','Shop KARL LAGERFELD Paris Kristen Canvas Tote Bag Black Gold Metallic. Made of canvas. The bag features a zip closure that opens to canvas lining with interior one slip pocket.',1990000.00,NULL,10,'paris-kristen-canvas-tote-bag-black-gold-metallic','New With Tag',1,NULL,'2024-12-11 13:46:05','2024-12-11 13:46:05'),
 (1612,28,542,'Ella Basketweave Circular Knit Tote Tan','ella-basketweave-circular-knit-tote-tan','Made of knit fabric with polyurethane trim and microfiber lining. The bag features an open magnetic snap closure with button snap closure at the side, gold tone hardware, and one slip pocket.','Made in Cambodia | Style number : 139031 0922 200 | Open magnetic snap closure | Gold tone hardware | Double handles | This type of bag is large enough for many items','Ella Basketweave Circular Knit Tote Tan | TORY BURCH Totes','Shop TORY BURCH Ella Basketweave Circular Knit Tote Tan. Made of knit fabric with polyurethane trim and microfiber lining. The bag features an open magnetic snap closure with button snap closure at the side, gold tone hardware, and one slip pocket.',3200000.00,NULL,10,'ella-basketweave-circular-knit-tote-tan','Brand new',1,NULL,'2024-12-11 13:46:05','2024-12-11 13:46:05'),
 (1613,28,542,'Ella Printed Tote Rayure Fleurie','ella-printed-tote-rayure-fleurie','Ella Tote is made of lightweight performance satin, printed in the season’s floral. This bag features with magnetic snap closure, 1 zip pocket, and 1 slit pocket.','Made in Cambodia | Style number : 143238 1122 960 | Performance satin (100% polyester) | Magnetic gusset snap closure | 1 interior zipper pocket | 1 slip pocket | 1 eksterior slip pocket with button closure','Ella Printed Tote Rayure Fleurie | TORY BURCH Totes','Shop TORY BURCH Ella Printed Tote Rayure Fleurie. Ella Tote is made of lightweight performance satin, printed in the season’s floral. This bag features with magnetic snap closure, 1 zip pocket, and 1 slit pocket.',3100000.00,NULL,10,'ella-printed-tote-rayure-fleurie','Brand new',1,NULL,'2024-12-11 13:46:05','2024-12-11 13:46:05'),
-(1614,28,3,'Signature Jet Set Travel Medium Carryall Tote Beige Ebony','signature-jet-set-travel-medium-carryall-tote-beige-ebony','Signature coated canvas with polyester lining. The bag features an open dogleash closure, gold tone hardware, one zip pocket, and one rear eksterior slip pocket.','Made in Indonesia | Serial number : 38R4GJ6T2J | Gold tone Hardware | MK Logo Medallion Hang Charm | Michael Kors metal Logo Lettering','Signature Jet Set Travel Medium Carryall Tote Beige Ebony | MICHAEL KORS Totes','Shop MICHAEL KORS Signature Jet Set Travel Medium Carryall Tote Beige Ebony. Signature coated canvas with polyester lining. The bag features an open dogleash closure, gold tone hardware, one zip pocket, and one rear eksterior slip pocket.',2990000.00,NULL,10,'signature-jet-set-travel-medium-carryall-tote-beige-ebony','Brand new | Completeness: Care card',1,NULL,'2024-12-11 13:46:05','2024-12-11 13:46:05');
+(1614,28,3,'Signature Jet Set Travel Medium Carryall Tote Beige Ebony','signature-jet-set-travel-medium-carryall-tote-beige-ebony','Signature coated canvas with polyester lining. The bag features an open dogleash closure, gold tone hardware, one zip pocket, and one rear eksterior slip pocket.','Made in Indonesia | Serial number : 38R4GJ6T2J | Gold tone Hardware | MK Logo Medallion Hang Charm | Michael Kors metal Logo Lettering','Signature Jet Set Travel Medium Carryall Tote Beige Ebony | MICHAEL KORS Totes','Shop MICHAEL KORS Signature Jet Set Travel Medium Carryall Tote Beige Ebony. Signature coated canvas with polyester lining. The bag features an open dogleash closure, gold tone hardware, one zip pocket, and one rear eksterior slip pocket.',2990000.00,NULL,10,'signature-jet-set-travel-medium-carryall-tote-beige-ebony','Brand new | Completeness: Care card',1,NULL,'2024-12-11 13:46:05','2024-12-11 13:46:05'),
+(1618,13,345,'Logitech G Pro X','logitech-g-pro-x','Logitech','Made in Indo','Logitech G Pro X | LONGCHAMP Laptop','Shop LONGCHAMP Logitech G Pro X. Logitech',1000000.00,NULL,4,'logitech-g-pro-x','Brand new | Completeness: Care card',0,'2024-12-12 16:39:13','2024-12-12 16:31:40','2024-12-13 11:07:24'),
+(1619,1,1194,'Logitech G502 HERO','logitech-g502-hero','HERO','HERO | dsadsa | fsdfsd','Logitech G502 HERO | FOSSIL Backpacks','Shop FOSSIL Logitech G502 HERO. HERO',750000.00,NULL,4,'logitech-g502-hero','Brand new | Completeness: Care card',0,'2024-12-13 11:12:15','2024-12-12 16:35:18','2024-12-13 11:12:15'),
+(1620,1,1537,'Gaming Chair','gaming-chairs','chairs1','Made in Indo | Great Chairs','Gaming Chair | MCM Laptop','Shop MCM Gaming Chair. chairs1',5100000.00,NULL,5,'gaming-chairs','Brand new | Completeness: Care card',0,NULL,'2024-12-12 16:38:24','2024-12-13 11:07:32'),
+(1621,1,1,'321321','321321','33321','321321321','321321 | FOSSIL Backpacks','Shop FOSSIL 321321. 33321',32132132.00,NULL,11,'321321','Brand new | Completeness: Care card',0,NULL,'2024-12-13 11:08:46','2024-12-13 11:08:57'),
+(1622,8,1194,'Razer Kiyo Pro 1','razer-kiyo-pro','Razer Kiyo Pro','Razer Kiyo Pro','Razer Kiyo Pro 1 | BALENCIAGA Travel','Shop BALENCIAGA Razer Kiyo Pro 1. Razer Kiyo Pro',1200000.00,NULL,12,'razer-kiyo-pro','Brand new | Completeness: Care card',0,'2024-12-13 13:31:31','2024-12-13 13:22:21','2024-12-13 13:31:31'),
+(1623,13,359,'Ducky One 3 SF','ducky-one-3-sf','Ducky One 3 SF','Ducky One 3 SF | SF | SF','Ducky One 3 SF | KARL LAGERFELD Laptop','Shop KARL LAGERFELD Ducky One 3 SF. Ducky One 3 SF',12300000.00,NULL,2,'ducky-one-3-sf','Brand new | Completeness: Care card',0,'2024-12-13 13:45:47','2024-12-13 13:44:28','2024-12-13 13:45:47');
 
 /*Table structure for table `roles` */
 
@@ -4302,9 +4328,12 @@ CREATE TABLE `shipping_details` (
   KEY `shipped_by` (`shipped_by`),
   CONSTRAINT `shipping_details_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`),
   CONSTRAINT `shipping_details_ibfk_2` FOREIGN KEY (`shipped_by`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 /*Data for the table `shipping_details` */
+
+insert  into `shipping_details`(`id`,`order_id`,`courier_name`,`service_type`,`tracking_number`,`shipping_cost`,`estimated_delivery_date`,`shipped_at`,`shipped_by`,`notes`,`created_at`,`updated_at`) values 
+(1,2,'JNT','REG','JNYSASJDl72831',50000.00,'2024-12-21','2024-12-13 15:56:02',3,'','2024-12-13 15:56:02','2024-12-13 15:56:02');
 
 /*Table structure for table `user_roles` */
 

@@ -295,6 +295,59 @@ try {
                 require_once $api_file;
                 exit;
 
+            // Admin Products List
+            case 'admin/products':
+                $api_file = ROOT_PATH . '/api/v1/admin/products/index.php';
+                if (!file_exists($api_file)) {
+                    error_log('Admin products list file not found at: ' . $api_file);
+                    throw new Exception('API endpoint file not found');
+                }
+                require_once $api_file;
+                exit;
+
+            // Admin Create Product
+            case 'admin/products/create':
+                $api_file = ROOT_PATH . '/api/v1/admin/products/create.php';
+                if (!file_exists($api_file)) {
+                    error_log('Admin create product file not found at: ' . $api_file);
+                    throw new Exception('API endpoint file not found');
+                }
+                require_once $api_file;
+                exit;
+
+            // Admin Get Product (GET request)
+            case (preg_match('/^admin\/products\/(\d+)$/', $api_path, $matches) && $_SERVER['REQUEST_METHOD'] === 'GET' ? true : false):
+                $api_file = ROOT_PATH . '/api/v1/admin/products/get.php';
+                if (!file_exists($api_file)) {
+                    error_log('Admin get product file not found at: ' . $api_file);
+                    throw new Exception('API endpoint file not found');
+                }
+                $_GET['id'] = $matches[1];
+                require_once $api_file;
+                exit;
+
+            // Admin Update Product (PUT request)
+            case (preg_match('/^admin\/products\/(\d+)$/', $api_path, $matches) && $_SERVER['REQUEST_METHOD'] === 'PUT' ? true : false):
+                $api_file = ROOT_PATH . '/api/v1/admin/products/update.php';
+                if (!file_exists($api_file)) {
+                    error_log('Admin update product file not found at: ' . $api_file);
+                    throw new Exception('API endpoint file not found');
+                }
+                $_GET['id'] = $matches[1];
+                require_once $api_file;
+                exit;
+
+            // Admin Delete Product
+            case (preg_match('/^admin\/products\/(\d+)\/delete$/', $api_path, $matches) ? true : false):
+                $api_file = ROOT_PATH . '/api/v1/admin/products/delete.php';
+                if (!file_exists($api_file)) {
+                    error_log('Admin delete product file not found at: ' . $api_file);
+                    throw new Exception('API endpoint file not found');
+                }
+                $_GET['id'] = $matches[1];
+                require_once $api_file;
+                exit;
+
             default:
                 header('Content-Type: application/json');
                 http_response_code(404);

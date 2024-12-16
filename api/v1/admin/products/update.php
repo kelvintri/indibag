@@ -155,11 +155,21 @@ try {
         $meta_title = "{$data['name']} | {$brand['name']} Bags";
         $meta_description = "Shop {$brand['name']} {$data['name']}";
         if ($data['description']) {
+            // Extract first sentence or first 150 characters
             $first_sentence = strtok($data['description'], '.');
-            if (strlen($first_sentence) > 150) {
-                $first_sentence = substr($first_sentence, 0, 147) . '...';
+            if ($first_sentence) {
+                if (strlen($first_sentence) > 150) {
+                    $first_sentence = substr($first_sentence, 0, 147) . '...';
+                }
+                $meta_description .= ". {$first_sentence}";
+            } else {
+                // If no sentence found, use first 150 characters
+                $description_excerpt = substr($data['description'], 0, 147);
+                if (strlen($data['description']) > 147) {
+                    $description_excerpt .= '...';
+                }
+                $meta_description .= ". {$description_excerpt}";
             }
-            $meta_description .= ". {$first_sentence}";
         }
 
         // Update product

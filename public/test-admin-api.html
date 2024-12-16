@@ -600,6 +600,12 @@
                                     <p>Orders: ${product.stats.total_orders}</p>
                                     <p>Units Sold: ${product.stats.total_sold}</p>
                                 </div>
+                                <div class="actions" style="margin-top: 10px;">
+                                    <button onclick="deleteProduct(${product.id}, '${product.name}')" 
+                                            style="background-color: #dc3545;">
+                                        Delete
+                                    </button>
+                                </div>
                             </div>
                         `;
                     });
@@ -873,6 +879,38 @@
             }
         `;
         document.head.appendChild(style);
+
+        // Add delete product function
+        async function deleteProduct(productId, productName) {
+            if (!confirm(`Are you sure you want to delete product "${productName}"?`)) {
+                return;
+            }
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = '';
+            resultDiv.textContent = 'Deleting product...';
+            
+            try {
+                const response = await fetch(`/api/v1/admin/products/${productId}/delete`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                const result = await response.json();
+                resultDiv.textContent = JSON.stringify(result, null, 2);
+                resultDiv.className = result.success ? 'success' : 'error';
+                
+                if (result.success) {
+                    // Refresh product list
+                    const listForm = document.getElementById('listProductsForm');
+                    if (listForm) listForm.dispatchEvent(new Event('submit'));
+                }
+                
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.className = 'error';
+            }
+        }
     </script>
 </body>
 </html> 

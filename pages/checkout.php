@@ -113,6 +113,54 @@ $user = $userStmt->fetch(PDO::FETCH_ASSOC);
                 </div>
             </div>
 
+            <!-- Shipping Method -->
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Shipping Method</h2>
+                <div class="space-y-4">
+                    <label class="block">
+                        <div class="flex items-center">
+                            <input type="radio" 
+                                   name="shipping_method" 
+                                   value="jne"
+                                   x-model="shippingMethod"
+                                   class="rounded-full border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <div class="ml-3">
+                                <span class="font-medium">JNE Regular</span>
+                                <p class="text-sm text-gray-500">Estimated delivery: 2-3 days</p>
+                            </div>
+                        </div>
+                    </label>
+                    
+                    <label class="block">
+                        <div class="flex items-center">
+                            <input type="radio" 
+                                   name="shipping_method" 
+                                   value="sicepat"
+                                   x-model="shippingMethod"
+                                   class="rounded-full border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <div class="ml-3">
+                                <span class="font-medium">SiCepat Regular</span>
+                                <p class="text-sm text-gray-500">Estimated delivery: 2-3 days</p>
+                            </div>
+                        </div>
+                    </label>
+
+                    <label class="block">
+                        <div class="flex items-center">
+                            <input type="radio" 
+                                   name="shipping_method" 
+                                   value="jnt"
+                                   x-model="shippingMethod"
+                                   class="rounded-full border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <div class="ml-3">
+                                <span class="font-medium">J&T Express Regular</span>
+                                <p class="text-sm text-gray-500">Estimated delivery: 2-3 days</p>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
             <!-- Order Items -->
             <div class="bg-white rounded-lg shadow-sm p-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Order Items</h2>
@@ -182,7 +230,27 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('checkoutForm', () => ({
         selectedAddressId: <?= htmlspecialchars($addresses[0]['id']) ?>,
         paymentMethod: 'bank_transfer',
+        shippingMethod: 'jne',
         isProcessing: false,
+
+        getShippingDetails() {
+            const courierMap = {
+                'jne': { name: 'JNE', service: 'Regular' },
+                'sicepat': { name: 'SiCepat', service: 'Regular' },
+                'jnt': { name: 'J&T Express', service: 'Regular' }
+            };
+
+            const courier = courierMap[this.shippingMethod];
+            const estimatedDate = new Date();
+            estimatedDate.setDate(estimatedDate.getDate() + 3); // Add 3 days
+
+            return {
+                courier_name: courier.name,
+                service_type: courier.service,
+                shipping_cost: Number(<?= $shippingCost ?>),
+                estimated_delivery_date: estimatedDate.toISOString().split('T')[0]
+            };
+        },
 
         async placeOrder() {
             if (this.isProcessing) return;
@@ -190,11 +258,13 @@ document.addEventListener('alpine:init', () => {
             try {
                 this.isProcessing = true;
                 
+                const shippingDetails = this.getShippingDetails();
                 const orderData = {
                     shipping_address_id: this.selectedAddressId,
                     payment_method: this.paymentMethod,
-                    shipping_cost: Number(<?= $shippingCost ?>),
-                    total_amount: Number(<?= $total ?>)
+                    shipping_cost: shippingDetails.shipping_cost,
+                    total_amount: Number(<?= $total ?>),
+                    shipping_details: shippingDetails
                 };
                 
                 console.log('Sending order data:', orderData);
@@ -211,9 +281,12 @@ document.addEventListener('alpine:init', () => {
                 console.log('Server response:', result);
                 
                 if (result.success) {
-                    window.location.href = `/orders/${result.order_id}`;
+                    // Redirect to confirmation page
+                    window.location.href = `/orders/${result.order_id}/confirmation`;
                 } else {
-                    alert(result.message || 'Error creating order');
+                    alert(result.error || 'Failed to create order');
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Place Order';
                 }
             } catch (error) {
                 console.error('Error placing order:', error);

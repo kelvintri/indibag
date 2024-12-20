@@ -27,430 +27,7 @@ try {
 
     error_log('Processing request for path: ' . $path);
 
-    // Test API route
-    if ($path === '/api/test') {
-        error_log('Matched /api/test route');
-        header('Content-Type: application/json');
-        echo json_encode(['message' => 'API route working']);
-        exit;
-    }
-
-    // Handle API routes
-    if (strpos($path, '/api/v1/') === 0) {
-        error_log('Matched API v1 route prefix');
-        $api_path = ltrim(substr($path, 7), '/'); // Remove /api/v1 and any leading slash
-        error_log('API path after prefix removal: ' . $api_path);
-
-        switch ($api_path) {
-            case 'auth/login':
-                $api_file = ROOT_PATH . '/api/v1/auth/login.php';
-                error_log('Looking for login file at: ' . $api_file);
-                if (!file_exists($api_file)) {
-                    error_log('Login file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-                
-            case 'auth/register':
-                $api_file = ROOT_PATH . '/api/v1/auth/register.php';
-                if (!file_exists($api_file)) {
-                    error_log('Register file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            case 'products':
-                $api_file = ROOT_PATH . '/api/v1/products/index.php';
-                if (!file_exists($api_file)) {
-                    error_log('Products file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-                
-            case (preg_match('/^products\/([^\/]+)$/', $api_path, $matches) ? true : false):
-                $api_file = ROOT_PATH . '/api/v1/products/detail.php';
-                if (!file_exists($api_file)) {
-                    error_log('Product detail file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                error_log('Product detail route matched. Slug: ' . $matches[1]);
-                $_GET['slug'] = urldecode($matches[1]); // URL decode the slug
-                require_once $api_file;
-                exit;
-                
-            case 'categories':
-                $api_file = ROOT_PATH . '/api/v1/categories/index.php';
-                if (!file_exists($api_file)) {
-                    error_log('Categories file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            case 'brands':
-                $api_file = ROOT_PATH . '/api/v1/brands/index.php';
-                if (!file_exists($api_file)) {
-                    error_log('Brands file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            case 'cart':
-                $api_file = ROOT_PATH . '/api/v1/cart/index.php';
-                if (!file_exists($api_file)) {
-                    error_log('Cart file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            case 'cart/add':
-                $api_file = ROOT_PATH . '/api/v1/cart/add.php';
-                if (!file_exists($api_file)) {
-                    error_log('Cart add file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            case 'cart/update':
-                $api_file = ROOT_PATH . '/api/v1/cart/update.php';
-                if (!file_exists($api_file)) {
-                    error_log('Cart update file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            case 'cart/remove':
-                $api_file = ROOT_PATH . '/api/v1/cart/remove.php';
-                if (!file_exists($api_file)) {
-                    error_log('Cart remove file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            case 'orders/create':
-                $api_file = ROOT_PATH . '/api/v1/orders/create.php';
-                if (!file_exists($api_file)) {
-                    error_log('Orders create file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            case 'user/addresses':
-                $api_file = ROOT_PATH . '/api/v1/user/addresses.php';
-                if (!file_exists($api_file)) {
-                    error_log('User addresses file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            case 'user/addresses/create':
-                $api_file = ROOT_PATH . '/api/v1/user/addresses/create.php';
-                if (!file_exists($api_file)) {
-                    error_log('Address create file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            case 'user/addresses/update':
-                $api_file = ROOT_PATH . '/api/v1/user/addresses/update.php';
-                if (!file_exists($api_file)) {
-                    error_log('Address update file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            case 'user/addresses/delete':
-                $api_file = ROOT_PATH . '/api/v1/user/addresses/delete.php';
-                if (!file_exists($api_file)) {
-                    error_log('Address delete file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            case 'orders':
-                $api_file = ROOT_PATH . '/api/v1/orders/index.php';
-                if (!file_exists($api_file)) {
-                    error_log('Orders list file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            case (preg_match('/^orders\/(\d+)$/', $api_path, $matches) ? true : false):
-                $api_file = ROOT_PATH . '/api/v1/orders/detail.php';
-                if (!file_exists($api_file)) {
-                    error_log('Order detail file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                $_GET['id'] = $matches[1];
-                require_once $api_file;
-                exit;
-
-            case (preg_match('/^orders\/(\d+)\/upload-payment$/', $api_path, $matches) ? true : false):
-                $api_file = ROOT_PATH . '/api/v1/orders/upload-payment.php';
-                if (!file_exists($api_file)) {
-                    error_log('Order upload payment file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                $_GET['id'] = $matches[1];
-                require_once $api_file;
-                exit;
-
-            case (preg_match('/^admin\/orders\/(\d+)\/verify-payment$/', $api_path, $matches) ? true : false):
-                $api_file = ROOT_PATH . '/api/v1/admin/orders/verify-payment.php';
-                if (!file_exists($api_file)) {
-                    error_log('Admin payment verification file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                $_GET['id'] = $matches[1];
-                require_once $api_file;
-                exit;
-
-            case 'user/profile':
-                $api_file = ROOT_PATH . '/api/v1/user/profile.php';
-                if (!file_exists($api_file)) {
-                    error_log('User profile file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            case 'user/profile/update':
-                $api_file = ROOT_PATH . '/api/v1/user/profile/update.php';
-                if (!file_exists($api_file)) {
-                    error_log('Profile update file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            case 'user/profile/password':
-                $api_file = ROOT_PATH . '/api/v1/user/profile/password.php';
-                if (!file_exists($api_file)) {
-                    error_log('Password update file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            case (preg_match('/^orders\/(\d+)\/cancel$/', $api_path, $matches) ? true : false):
-                $api_file = ROOT_PATH . '/api/v1/orders/cancel.php';
-                if (!file_exists($api_file)) {
-                    error_log('Order cancel file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                $_GET['id'] = $matches[1];
-                require_once $api_file;
-                exit;
-
-            case (preg_match('/^orders\/(\d+)\/refund$/', $api_path, $matches) ? true : false):
-                $api_file = ROOT_PATH . '/api/v1/orders/refund.php';
-                if (!file_exists($api_file)) {
-                    error_log('Order refund file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                $_GET['id'] = $matches[1];
-                require_once $api_file;
-                exit;
-
-            case 'admin/orders':
-                $api_file = ROOT_PATH . '/api/v1/admin/orders/index.php';
-                if (!file_exists($api_file)) {
-                    error_log('Admin orders list file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            case (preg_match('/^admin\/orders\/(\d+)\/status$/', $api_path, $matches) ? true : false):
-                $api_file = ROOT_PATH . '/api/v1/admin/orders/update-status.php';
-                if (!file_exists($api_file)) {
-                    error_log('Admin order status update file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                $_GET['id'] = $matches[1];
-                require_once $api_file;
-                exit;
-
-            case (preg_match('/^admin\/orders\/(\d+)\/verify-payment$/', $api_path, $matches) ? true : false):
-                $api_file = ROOT_PATH . '/api/v1/admin/orders/verify-payment.php';
-                if (!file_exists($api_file)) {
-                    error_log('Admin payment verification file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                $_GET['id'] = $matches[1];
-                require_once $api_file;
-                exit;
-
-            // Admin Products List
-            case 'admin/products':
-                $api_file = ROOT_PATH . '/api/v1/admin/products/index.php';
-                if (!file_exists($api_file)) {
-                    error_log('Admin products list file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            // Admin Create Product
-            case 'admin/products/create':
-                $api_file = ROOT_PATH . '/api/v1/admin/products/create.php';
-                if (!file_exists($api_file)) {
-                    error_log('Admin create product file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                require_once $api_file;
-                exit;
-
-            // Admin Get Product (GET request)
-            case (preg_match('/^admin\/products\/(\d+)$/', $api_path, $matches) && $_SERVER['REQUEST_METHOD'] === 'GET' ? true : false):
-                $api_file = ROOT_PATH . '/api/v1/admin/products/get.php';
-                if (!file_exists($api_file)) {
-                    error_log('Admin get product file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                $_GET['id'] = $matches[1];
-                require_once $api_file;
-                exit;
-
-            // Admin Update Product (PUT request)
-            case (preg_match('/^admin\/products\/(\d+)$/', $api_path, $matches) && $_SERVER['REQUEST_METHOD'] === 'PUT' ? true : false):
-                $api_file = ROOT_PATH . '/api/v1/admin/products/update.php';
-                if (!file_exists($api_file)) {
-                    error_log('Admin update product file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                $_GET['id'] = $matches[1];
-                require_once $api_file;
-                exit;
-
-            // Admin Delete Product
-            case (preg_match('/^admin\/products\/(\d+)\/delete$/', $api_path, $matches) ? true : false):
-                $api_file = ROOT_PATH . '/api/v1/admin/products/delete.php';
-                if (!file_exists($api_file)) {
-                    error_log('Admin delete product file not found at: ' . $api_file);
-                    throw new Exception('API endpoint file not found');
-                }
-                $_GET['id'] = $matches[1];
-                require_once $api_file;
-                exit;
-
-            default:
-                header('Content-Type: application/json');
-                http_response_code(404);
-                echo json_encode([
-                    'error' => 'API endpoint not found', 
-                    'path' => $api_path,
-                    'full_path' => ROOT_PATH . '/api/v1/' . $api_path . '.php'
-                ]);
-                exit;
-        }
-    }
-
-    // Check if path starts with /admin
-    if (strpos($path, '/admin') === 0) {
-        // Admin routes
-        switch ($path) {
-            case '/admin':
-            case '/admin/dashboard':
-                AdminAuth::requireAdmin();
-                $pageTitle = 'Admin Dashboard';
-                $content = ROOT_PATH . '/pages/admin/dashboard.php';
-                require_once ROOT_PATH . '/includes/admin-layout.php';
-                exit;
-                break;
-                
-            case '/admin/products':
-                AdminAuth::requireAdmin();
-                $pageTitle = 'Manage Products';
-                $content = ROOT_PATH . '/pages/admin/products.php';
-                require_once ROOT_PATH . '/includes/admin-layout.php';
-                exit;
-                break;
-                
-            case '/admin/products/create':
-                AdminAuth::requireAdmin();
-                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                    require_once ROOT_PATH . '/pages/admin/products/create.php';
-                    exit;
-                }
-                break;
-                
-            case (preg_match('/^\/admin\/products\/edit\/(\d+)$/', $path, $matches) ? true : false):
-                AdminAuth::requireAdmin();
-                $pageTitle = 'Edit Product';
-                $content = ROOT_PATH . '/pages/admin/products/edit.php';
-                require_once ROOT_PATH . '/includes/admin-layout.php';
-                exit;
-                break;
-                
-            case '/admin/orders':
-                AdminAuth::requireAdmin();
-                $pageTitle = 'Manage Orders';
-                $content = ROOT_PATH . '/pages/admin/orders/index.php';
-                require_once ROOT_PATH . '/includes/admin-layout.php';
-                exit;
-                break;
-                
-            case '/admin/users':
-                AdminAuth::requireAdmin();
-                $pageTitle = 'Manage Users';
-                $content = ROOT_PATH . '/pages/admin/users/index.php';
-                require_once ROOT_PATH . '/includes/admin-layout.php';
-                exit;
-                break;
-                
-            case '/admin/settings':
-                AdminAuth::requireAdmin();
-                $pageTitle = 'Settings';
-                $content = ROOT_PATH . '/pages/admin/settings.php';
-                require_once ROOT_PATH . '/includes/admin-layout.php';
-                exit;
-                break;
-            case '/admin/products/update':
-                AdminAuth::requireAdmin();
-                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                    require_once ROOT_PATH . '/pages/admin/update-product.php';
-                    exit;
-                }
-                break;
-            case '/admin/orders/update-status':
-                AdminAuth::requireAdmin();
-                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                    require_once ROOT_PATH . '/pages/admin/orders/update-status.php';
-                    exit;
-                }
-                break;
-            case '/admin/orders/update-shipping':
-                AdminAuth::requireAdmin();
-                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                    require_once ROOT_PATH . '/pages/admin/orders/update-shipping.php';
-                    exit;
-                }
-                break;
-            case (preg_match('/^\/admin\/orders\/(\d+)$/', $path, $matches) ? true : false):
-                AdminAuth::requireAdmin();
-                header('Content-Type: application/json');
-                require_once ROOT_PATH . '/pages/admin/orders/get-order.php';
-                exit;
-                break;
-        }
-    }
-
-    // At the top of the file, add a helper function
+    // Helper function to render pages
     function renderPage($filePath) {
         ob_start();
         $result = include($filePath);
@@ -461,76 +38,120 @@ try {
         return ob_get_clean();
     }
 
+    // Check if path starts with /api
+    if (strpos($path, '/api') === 0) {
+        // API routes
+        if (preg_match('/^\/api\/orders\/(\d+)$/', $path, $matches)) {
+            require_once ROOT_PATH . '/api/orders/[id].php';
+            exit;
+        }
+        // Add more API routes here if needed
+        
+        // If no API route matches, return 404
+        http_response_code(404);
+        echo json_encode(['error' => 'API endpoint not found']);
+        exit;
+    }
+
+    // Check if path starts with /admin
+    if (strpos($path, '/admin') === 0) {
+        // Admin routes
+        switch (true) {
+            case '/admin' === $path:
+            case '/admin/dashboard' === $path:
+                AdminAuth::requireAdmin();
+                $pageTitle = 'Admin Dashboard';
+                $content = ROOT_PATH . '/pages/admin/dashboard.php';
+                require_once ROOT_PATH . '/includes/admin-layout.php';
+                exit;
+                break;
+                
+            case '/admin/products' === $path:
+                AdminAuth::requireAdmin();
+                $pageTitle = 'Manage Products';
+                $content = ROOT_PATH . '/pages/admin/products.php';
+                require_once ROOT_PATH . '/includes/admin-layout.php';
+                exit;
+                break;
+                
+            case '/admin/orders' === $path:
+                AdminAuth::requireAdmin();
+                $pageTitle = 'Manage Orders';
+                $content = ROOT_PATH . '/pages/admin/orders/index.php';
+                require_once ROOT_PATH . '/includes/admin-layout.php';
+                exit;
+                break;
+
+            case (preg_match('/^\/admin\/orders\/(\d+)$/', $path, $matches) ? true : false):
+                AdminAuth::requireAdmin();
+                require_once ROOT_PATH . '/pages/admin/orders/get-order.php';
+                exit;
+                break;
+                
+            case '/admin/users' === $path:
+                AdminAuth::requireAdmin();
+                $pageTitle = 'Manage Users';
+                $content = ROOT_PATH . '/pages/admin/users/index.php';
+                require_once ROOT_PATH . '/includes/admin-layout.php';
+                exit;
+                break;
+                
+            case '/admin/settings' === $path:
+                AdminAuth::requireAdmin();
+                $pageTitle = 'Settings';
+                $content = ROOT_PATH . '/pages/admin/settings.php';
+                require_once ROOT_PATH . '/includes/admin-layout.php';
+                exit;
+                break;
+        }
+    }
+
     // Regular routes
     switch ($path) {
         case '/':
             $pageTitle = 'Home - Bananina';
             $content = renderPage(ROOT_PATH . '/pages/home.php');
             break;
-        case '/orders/create':
-            Auth::requireLogin();
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                require_once ROOT_PATH . '/includes/Cart.php';
-                require_once ROOT_PATH . '/includes/Order.php';
-                require_once ROOT_PATH . '/pages/orders/create.php';
-                exit;
-            }
-            break;
+
         case '/products':
             $pageTitle = 'Products - Bananina';
             $content = renderPage(ROOT_PATH . '/pages/products.php');
             break;
+
         case '/categories':
             $pageTitle = 'Categories - Bananina';
             $content = renderPage(ROOT_PATH . '/pages/categories.php');
             break;
+
         case '/cart':
             $pageTitle = 'Shopping Cart - Bananina';
             $content = renderPage(ROOT_PATH . '/pages/cart.php');
             break;
+
         case '/cart/add':
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                error_log('=== Cart Add Request ===');
+                error_log('POST data: ' . print_r($_POST, true));
+                error_log('Request headers: ' . print_r(getallheaders(), true));
+                
                 $cart = new Cart();
                 $result = $cart->add($_POST['product_id'], $_POST['quantity'] ?? 1);
-                // Return JSON response instead of redirecting
+                
+                error_log('Cart add result: ' . print_r($result, true));
+                
                 header('Content-Type: application/json');
                 echo json_encode($result);
                 exit;
             }
             header('Location: /');
             break;
-        case '/login':
-            $pageTitle = 'Login - Bananina';
-            $content = renderPage(ROOT_PATH . '/pages/login.php');
-            break;
-        case '/register':
-            $pageTitle = 'Register - Bananina';
-            $content = renderPage(ROOT_PATH . '/pages/register.php');
-            break;
-        case '/logout':
-            $auth = new Auth();
-            $auth->logout();
-            header('Location: /login');
-            exit;
-            break;
-        case '/debug-images':
-            $pageTitle = 'Debug Images';
-            $content = ROOT_PATH . '/pages/debug-images.php';
-            break;
-        case (preg_match('/^\/products\/[\w-]+$/', $path) ? true : false):
-            $slug = basename($path);
-            $pageTitle = 'Product Details - Bananina';
-            $content = renderPage(ROOT_PATH . '/pages/product-detail.php');
-            if ($content === false) {
-                header('Location: /404');
-                exit;
-            }
-            break;
+
         case '/cart/count':
             $cart = new Cart();
             echo $cart->getCount();
             exit;
             break;
+
         case '/cart/items':
             $cart = new Cart();
             $items = $cart->getItems();
@@ -542,11 +163,40 @@ try {
             ]);
             exit;
             break;
+
+        case '/login':
+            $pageTitle = 'Login - Bananina';
+            $content = renderPage(ROOT_PATH . '/pages/login.php');
+            break;
+
+        case '/register':
+            $pageTitle = 'Register - Bananina';
+            $content = renderPage(ROOT_PATH . '/pages/register.php');
+            break;
+
+        case '/logout':
+            $auth = new Auth();
+            $auth->logout();
+            header('Location: /login');
+            exit;
+            break;
+
+        case (preg_match('/^\/products\/[\w-]+$/', $path) ? true : false):
+            $slug = basename($path);
+            $pageTitle = 'Product Details - Bananina';
+            $content = renderPage(ROOT_PATH . '/pages/product-detail.php');
+            if ($content === false) {
+                header('Location: /404');
+                exit;
+            }
+            break;
+
         case '/profile':
             Auth::requireLogin();
             $pageTitle = 'Profile - Bananina';
             $content = renderPage(ROOT_PATH . '/pages/profile/index.php');
             break;
+
         case '/profile/addresses':
             Auth::requireLogin();
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -560,6 +210,7 @@ try {
             $pageTitle = 'Manage Addresses - Bananina';
             $content = renderPage(ROOT_PATH . '/pages/profile/addresses.php');
             break;
+
         case '/checkout':
             Auth::requireLogin();
             // Redirect if cart is empty
@@ -571,6 +222,66 @@ try {
             $pageTitle = 'Checkout - Bananina';
             $content = renderPage(ROOT_PATH . '/pages/checkout.php');
             break;
+
+        case '/orders/create':
+            Auth::requireLogin();
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                // Get JSON input
+                $json = file_get_contents('php://input');
+                error_log('Raw input: ' . $json);
+                
+                $data = json_decode($json, true);
+                error_log('Decoded data: ' . print_r($data, true));
+                
+                // Get cart items
+                $cart = new Cart();
+                $items = $cart->getItems();
+                
+                // Add items to order data
+                $data['items'] = $items;
+                error_log('Prepared order data: ' . print_r($data, true));
+                
+                // Create order
+                $order = new Order();
+                $result = $order->create($data);
+                
+                // Clear cart if order was created successfully
+                if ($result['success']) {
+                    $cart->clear();
+                    // Return order ID for redirection
+                    $result['order_id'] = $order->getLastInsertId();
+                }
+                
+                header('Content-Type: application/json');
+                echo json_encode($result);
+                exit;
+            }
+            header('Location: /cart');
+            break;
+
+        case '/orders/upload-payment':
+            Auth::requireLogin();
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                require_once ROOT_PATH . '/orders/upload-payment.php';
+                exit;
+            }
+            header('Location: /orders');
+            break;
+
+        case (preg_match('/^\/orders\/(\d+)\/confirmation$/', $path, $matches) ? true : false):
+            Auth::requireLogin();
+            $pageTitle = 'Order Confirmation - Bananina';
+            $content = renderPage(ROOT_PATH . '/pages/orders/confirmation.php');
+            require_once ROOT_PATH . '/layouts/main.php';
+            exit;
+            break;
+
+        case '/orders':
+            Auth::requireLogin();
+            $pageTitle = 'My Orders - Bananina';
+            $content = renderPage(ROOT_PATH . '/pages/orders/index.php');
+            break;
+
         case (preg_match('/^\/orders\/(\d+)$/', $path, $matches) ? true : false):
             Auth::requireLogin();
             $order_id = $matches[1];
@@ -583,60 +294,42 @@ try {
             $order = $orderObj->getOrder($order_id);
             
             if (!$order) {
-                $pageTitle = '404 Not Found - Bananina';
-                $content = renderPage(ROOT_PATH . '/pages/404.php');
-            } else {
-                $pageTitle = 'Order Details - Bananina';
-                $content = renderPage(ROOT_PATH . '/pages/orders/detail.php');
-            }
-            break;
-        case '/orders':
-            Auth::requireLogin();
-            $pageTitle = 'My Orders - Bananina';
-            $content = renderPage(ROOT_PATH . '/pages/orders/index.php');
-            break;
-        case '/orders/upload-payment':
-            Auth::requireLogin();
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                // Prevent any PHP errors from being output
-                error_reporting(0);
-                
-                // Set headers early
+                http_response_code(404);
                 header('Content-Type: application/json');
-                
-                // Start output buffering
-                ob_start();
-                
-                try {
-                    if (!isset($_FILES['payment_proof']) || !isset($_POST['order_id'])) {
-                        throw new Exception('Missing required data');
-                    }
-
-                    require_once ROOT_PATH . '/includes/Order.php';
-                    $order = new Order();
-                    $result = $order->uploadPaymentProof($_POST['order_id'], $_FILES['payment_proof']);
-                    
-                    // Clean any output before sending JSON
-                    ob_clean();
-                    echo json_encode($result);
-                    
-                } catch (Exception $e) {
-                    ob_clean();
-                    error_log("Upload error: " . $e->getMessage());
-                    echo json_encode([
-                        'success' => false,
-                        'message' => $e->getMessage()
-                    ]);
-                }
+                echo json_encode(['error' => 'Order not found']);
                 exit;
             }
-            break;
-        case (preg_match('/^\/admin\/orders\/(\d+)$/', $path, $matches) ? true : false):
-            AdminAuth::requireAdmin();
+
+            // Get order items
+            $items = $orderObj->getOrderItems($order_id);
+            $order['items'] = $items;
+            
+            // Get payment details
+            $db = new Database();
+            $conn = $db->getConnection();
+            $query = "SELECT payment_method, payment_date, verified_at, transfer_proof_url 
+                    FROM payment_details 
+                    WHERE order_id = :order_id";
+            $stmt = $conn->prepare($query);
+            $stmt->bindParam(":order_id", $order_id);
+            $stmt->execute();
+            $payment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($payment) {
+                $order['payment_method'] = $payment['payment_method'];
+                $order['payment_date'] = $payment['payment_date'];
+                $order['verified_at'] = $payment['verified_at'];
+                $order['transfer_proof_url'] = $payment['transfer_proof_url'];
+            }
+
+            // Add can_reupload_payment flag
+            $order['can_reupload_payment'] = $orderObj->canReuploadPayment($order_id);
+
             header('Content-Type: application/json');
-            require_once ROOT_PATH . '/pages/admin/orders/get-order.php';
+            echo json_encode($order);
             exit;
             break;
+
         default:
             $pageTitle = '404 Not Found - Bananina';
             $content = renderPage(ROOT_PATH . '/pages/404.php');

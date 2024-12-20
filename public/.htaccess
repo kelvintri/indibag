@@ -10,3 +10,18 @@ RewriteCond %{REQUEST_FILENAME} !-d
 
 # Rewrite all requests to index.php
 RewriteRule ^(.*)$ index.php [QSA,L] 
+
+# Admin Brand Management
+RewriteRule ^api/v1/admin/brands/create$ index.php?api_path=admin/brands/create [QSA,L]
+RewriteRule ^api/v1/admin/brands/([0-9]+)$ index.php?api_path=admin/brands/$1 [QSA,L]
+RewriteRule ^api/v1/admin/brands/([0-9]+)/delete$ index.php?api_path=admin/brands/$1/delete [QSA,L]
+
+# Admin Category Management
+RewriteRule ^api/v1/admin/categories/([0-9]+)/delete$ index.php?api_path=admin/categories/$1/delete [QSA,L]
+RewriteRule ^api/v1/admin/categories/([0-9]+)$ index.php?api_path=admin/categories/$1 [QSA,L]
+RewriteRule ^api/v1/admin/categories/create$ index.php?api_path=admin/categories/create [QSA,L]
+
+# Admin Order Management
+RewriteRule ^api/v1/admin/orders/([0-9]+)/update-status$ index.php?api_path=admin/orders/$1/update-status [QSA,L]
+RewriteRule ^api/v1/admin/orders/([0-9]+)/verify-payment$ index.php?api_path=admin/orders/$1/verify-payment [QSA,L]
+RewriteRule ^api/v1/admin/orders/([0-9]+)/update-shipping$ index.php?api_path=admin/orders/$1/update-shipping [QSA,L]

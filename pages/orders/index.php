@@ -19,7 +19,136 @@ $stmt->execute();
 $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div x-data="{ 
+    showOrderDetail: false,
+    showPaymentModal: false,
+    currentOrderId: null,
+    orderData: null,
+    file: null, 
+    preview: null, 
+    dragover: false, 
+    isUploading: false,
+    
+    async loadOrderDetails(orderId) {
+        try {
+            const response = await fetch(`/orders/${orderId}`);
+            if (!response.ok) throw new Error('Failed to load order details');
+            this.orderData = await response.json();
+            this.currentOrderId = orderId;
+            this.showOrderDetail = true;
+            // Reset payment modal state
+            this.showPaymentModal = false;
+            this.file = null;
+            this.preview = null;
+        } catch (error) {
+            console.error('Error loading order details:', error);
+            alert('Failed to load order details. Please try again.');
+        }
+    },
+
+    formatDate(dateString, includeTime = false) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        if (includeTime) {
+            options.hour = '2-digit';
+            options.minute = '2-digit';
+        }
+        return date.toLocaleDateString('en-US', options);
+    },
+
+    formatPrice(amount) {
+        // Convert string amounts to numbers and handle null/undefined
+        const total = parseFloat(amount) || 0;
+        return 'Rp ' + total.toLocaleString('id-ID');
+    },
+
+    formatStatus(status) {
+        return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    },
+
+    formatPaymentMethod(method) {
+        return method ? method.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : '-';
+    },
+
+    getStatusStyle(status) {
+        return {
+            'pending_payment': 'bg-yellow-100 text-yellow-800',
+            'payment_uploaded': 'bg-blue-100 text-blue-800',
+            'payment_verified': 'bg-indigo-100 text-indigo-800',
+            'processing': 'bg-indigo-100 text-indigo-800',
+            'shipped': 'bg-purple-100 text-purple-800',
+            'delivered': 'bg-green-100 text-green-800',
+            'cancelled': 'bg-red-100 text-red-800',
+            'refunded': 'bg-red-100 text-red-800'
+        }[status] || 'bg-gray-100 text-gray-800';
+    },
+
+    handleFileSelect(event) {
+        const file = event.target.files[0];
+        this.setFile(file);
+    },
+
+    handleDrop(event) {
+        this.dragover = false;
+        const file = event.dataTransfer.files[0];
+        this.setFile(file);
+    },
+
+    setFile(file) {
+        if (!file || !file.type.startsWith('image/')) {
+            alert('Please upload an image file');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File size should be less than 5MB');
+            return;
+        }
+
+        this.file = file;
+        const reader = new FileReader();
+        reader.onload = e => this.preview = e.target.result;
+        reader.readAsDataURL(file);
+    },
+
+    removeFile() {
+        this.file = null;
+        this.preview = null;
+    },
+
+    async uploadPayment() {
+        if (!this.file) return;
+        
+        try {
+            this.isUploading = true;
+            const formData = new FormData();
+            formData.append('order_id', this.currentOrderId);
+            formData.append('payment_proof', this.file);
+
+            const response = await fetch('/orders/upload-payment', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                window.location.reload();
+            } else {
+                alert(result.message || 'Error uploading payment proof');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error uploading payment proof');
+        } finally {
+            this.isUploading = false;
+        }
+    }
+}" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Include the order detail modal template -->
+    <?php require_once ROOT_PATH . '/pages/orders/detail.php'; ?>
+
     <!-- Profile Navigation -->
     <div class="mb-8 border-b">
         <nav class="flex space-x-8">
@@ -127,13 +256,13 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </span>
                             </div>
                             <div>
-                                <a href="/orders/<?= $order['id'] ?>" 
+                                <button @click="loadOrderDetails(<?= $order['id'] ?>)" 
                                    class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800">
                                     View Details
                                     <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                     </svg>
-                                </a>
+                                </button>
                             </div>
                         </div>
                     </div>

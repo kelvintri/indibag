@@ -340,7 +340,58 @@ $brands = $brandsStmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <?php foreach ($products as $product): ?>
                         <div class="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition duration-300 ease-in-out"
-                             x-data="{ isHovered: false }">
+                             x-data="{ 
+                                isHovered: false,
+                                showNotification: false,
+                                notificationType: 'success',
+                                notificationMessage: '',
+                                isLoading: false,
+                                async addToCart(productId) {
+                                    if (this.isLoading) return; // Prevent double clicks
+                                    this.isLoading = true;
+                                    console.log('Adding to cart:', productId);
+                                    
+                                    try {
+                                        const response = await fetch('/cart/add', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/x-www-form-urlencoded',
+                                            },
+                                            body: `product_id=${productId}&quantity=1`
+                                        });
+                                        
+                                        const data = await response.json();
+                                        console.log('Cart response:', data);
+                                        
+                                        this.notificationType = data.success ? 'success' : 'error';
+                                        this.notificationMessage = data.message;
+                                        this.showNotification = true;
+                                        
+                                        setTimeout(() => {
+                                            this.showNotification = false;
+                                        }, 2000);
+
+                                        if (data.success) {
+                                            const cartCountEl = document.querySelector('.cart-count');
+                                            if (cartCountEl) {
+                                                const countResponse = await fetch('/cart/count');
+                                                const count = await countResponse.text();
+                                                cartCountEl.textContent = count;
+                                            }
+                                        }
+                                    } catch (error) {
+                                        console.error('Error adding to cart:', error);
+                                        this.notificationType = 'error';
+                                        this.notificationMessage = 'Error adding to cart';
+                                        this.showNotification = true;
+                                        setTimeout(() => {
+                                            this.showNotification = false;
+                                        }, 2000);
+                                    } finally {
+                                        this.isLoading = false;
+                                    }
+                                }
+                             }">
                             <!-- Product Image -->
                             <div class="relative pt-[125%]">
                                 <div class="absolute inset-0 overflow-hidden bg-gray-100"
@@ -370,8 +421,9 @@ $brands = $brandsStmt->fetchAll(PDO::FETCH_ASSOC);
                                 </p>
                                 <?php if ($product['stock'] > 0): ?>
                                     <button @click="addToCart(<?= $product['id'] ?>)" 
-                                            class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-150 ease-in-out">
-                                        Add to Cart
+                                            :disabled="isLoading"
+                                            class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <span x-text="isLoading ? 'Adding...' : 'Add to Cart'"></span>
                                     </button>
                                 <?php else: ?>
                                     <button disabled 
@@ -379,6 +431,19 @@ $brands = $brandsStmt->fetchAll(PDO::FETCH_ASSOC);
                                         Out of Stock
                                     </button>
                                 <?php endif; ?>
+                            </div>
+
+                            <!-- Notification -->
+                            <div x-show="showNotification"
+                                 x-transition:enter="transition ease-out duration-300"
+                                 x-transition:enter-start="opacity-0 transform translate-x-full"
+                                 x-transition:enter-end="opacity-100 transform translate-x-0"
+                                 x-transition:leave="transition ease-in duration-300"
+                                 x-transition:leave-start="opacity-100 transform translate-x-0"
+                                 x-transition:leave-end="opacity-0 transform translate-x-full"
+                                 :class="notificationType === 'success' ? 'bg-green-500' : 'bg-red-500'"
+                                 class="fixed top-4 right-4 text-white px-6 py-3 rounded-md shadow-lg z-50">
+                                <span x-text="notificationMessage"></span>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -487,46 +552,5 @@ $brands = $brandsStmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
     </div>
-
-    <script>
-    async function addToCart(productId) {
-        try {
-            const response = await fetch('/cart/add', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `product_id=${productId}&quantity=1`
-            });
-            
-            const data = await response.json();
-            
-            this.notificationType = data.success ? 'success' : 'error';
-            this.notificationMessage = data.message;
-            this.showNotification = true;
-            
-            setTimeout(() => {
-                this.showNotification = false;
-            }, 2000);
-
-            if (data.success) {
-                const cartCountEl = document.querySelector('.cart-count');
-                if (cartCountEl) {
-                    const countResponse = await fetch('/cart/count');
-                    const count = await countResponse.text();
-                    cartCountEl.textContent = count;
-                }
-            }
-        } catch (error) {
-            console.error('Error adding to cart:', error);
-            this.notificationType = 'error';
-            this.notificationMessage = 'Error adding to cart';
-            this.showNotification = true;
-            setTimeout(() => {
-                this.showNotification = false;
-            }, 2000);
-        }
-    }
-    </script>
 </body>
 </html>

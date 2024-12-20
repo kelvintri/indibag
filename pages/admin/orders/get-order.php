@@ -15,6 +15,7 @@ try {
         SELECT o.*, 
                u.email as user_email,
                u.full_name as user_name,
+               a.recipient_name,
                a.street_address,
                a.district,
                a.city,
@@ -26,14 +27,25 @@ try {
                pd.payment_amount,
                pd.payment_date,
                pd.verified_at,
-               pd.notes,
+               pd.notes as payment_notes,
                u_verified.username as verified_by_username,
-               u_verified.full_name as verified_by_name
+               u_verified.full_name as verified_by_name,
+               sd.courier_name,
+               sd.service_type,
+               sd.tracking_number,
+               sd.shipping_cost,
+               sd.estimated_delivery_date,
+               sd.shipped_at,
+               sd.notes as shipping_notes,
+               u_shipped.username as shipped_by_username,
+               u_shipped.full_name as shipped_by_name
         FROM orders o
         LEFT JOIN users u ON o.user_id = u.id
         LEFT JOIN addresses a ON o.shipping_address_id = a.id
         LEFT JOIN payment_details pd ON o.id = pd.order_id
+        LEFT JOIN shipping_details sd ON o.id = sd.order_id
         LEFT JOIN users u_verified ON pd.verified_by = u_verified.id
+        LEFT JOIN users u_shipped ON sd.shipped_by = u_shipped.id
         WHERE o.id = ?
     ");
     

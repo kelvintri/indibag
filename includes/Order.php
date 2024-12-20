@@ -2,6 +2,7 @@
 class Order {
     private $db;
     private $user_id;
+    private $lastInsertId = null;
     
     public function __construct() {
         $database = new Database();
@@ -77,7 +78,7 @@ class Order {
                 ':payment_method' => $data['payment_method']
             ]);
             
-            $order_id = $this->db->lastInsertId();
+            $this->lastInsertId = $this->db->lastInsertId();
             
             // Create payment details
             $paymentQuery = "INSERT INTO payment_details (
@@ -94,10 +95,38 @@ class Order {
             
             $paymentStmt = $this->db->prepare($paymentQuery);
             $paymentStmt->execute([
-                ':order_id' => $order_id,
+                ':order_id' => $this->lastInsertId,
                 ':payment_method' => $data['payment_method'],
                 ':payment_amount' => floatval($data['total_amount']) + floatval($data['shipping_cost'])
             ]);
+
+            // Create shipping details
+            if (isset($data['shipping_details'])) {
+                $shippingQuery = "INSERT INTO shipping_details (
+                    order_id,
+                    courier_name,
+                    service_type,
+                    shipping_cost,
+                    estimated_delivery_date,
+                    created_at
+                ) VALUES (
+                    :order_id,
+                    :courier_name,
+                    :service_type,
+                    :shipping_cost,
+                    :estimated_delivery_date,
+                    NOW()
+                )";
+                
+                $shippingStmt = $this->db->prepare($shippingQuery);
+                $shippingStmt->execute([
+                    ':order_id' => $this->lastInsertId,
+                    ':courier_name' => $data['shipping_details']['courier_name'],
+                    ':service_type' => $data['shipping_details']['service_type'],
+                    ':shipping_cost' => floatval($data['shipping_cost']),
+                    ':estimated_delivery_date' => $data['shipping_details']['estimated_delivery_date']
+                ]);
+            }
             
             // Create order items
             $itemQuery = "INSERT INTO order_items (
@@ -116,7 +145,7 @@ class Order {
             
             foreach ($data['items'] as $item) {
                 $itemStmt->execute([
-                    ':order_id' => $order_id,
+                    ':order_id' => $this->lastInsertId,
                     ':product_id' => $item['id'],
                     ':quantity' => $item['quantity'],
                     ':price' => $item['price']
@@ -127,7 +156,7 @@ class Order {
             
             return [
                 'success' => true,
-                'order_id' => $order_id
+                'order_id' => $this->lastInsertId
             ];
             
         } catch (Exception $e) {
@@ -357,5 +386,9 @@ class Order {
             error_log("Error checking reupload status: " . $e->getMessage());
             return false;
         }
+    }
+
+    public function getLastInsertId() {
+        return $this->lastInsertId;
     }
 }

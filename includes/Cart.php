@@ -16,6 +16,8 @@ class Cart {
     
     public function add($product_id, $quantity = 1) {
         try {
+            error_log("Cart add called - product_id: " . $product_id . ", quantity: " . $quantity);
+            
             // Check product exists and is active
             $query = "SELECT id, stock, price FROM products WHERE id = :product_id AND is_active = 1";
             $stmt = $this->db->prepare($query);
@@ -24,11 +26,13 @@ class Cart {
             $product = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if (!$product) {
+                error_log("Product not found: " . $product_id);
                 return ['success' => false, 'message' => 'Product not found'];
             }
 
             // Check if item already exists in cart
             if ($this->user_id) {
+                error_log("Logged in user: " . $this->user_id);
                 // For logged-in users, check database
                 $checkQuery = "SELECT quantity FROM cart 
                              WHERE user_id = :user_id AND product_id = :product_id";
@@ -37,19 +41,24 @@ class Cart {
                 $checkStmt->bindParam(":product_id", $product_id);
                 $checkStmt->execute();
                 $existingItem = $checkStmt->fetch(PDO::FETCH_ASSOC);
+                error_log("Existing item: " . json_encode($existingItem));
 
                 $newQuantity = ($existingItem ? $existingItem['quantity'] : 0) + $quantity;
+                error_log("New quantity will be: " . $newQuantity);
                 
                 // Check maximum quantity limit
                 if ($newQuantity > 10) {
+                    error_log("Maximum quantity exceeded");
                     return ['success' => false, 'message' => 'Maximum quantity limit is 10 items'];
                 }
 
                 if ($newQuantity > $product['stock']) {
+                    error_log("Not enough stock");
                     return ['success' => false, 'message' => 'Not enough stock'];
                 }
 
                 if ($existingItem) {
+                    error_log("Updating existing cart item");
                     // Update existing cart item
                     $updateQuery = "UPDATE cart 
                                   SET quantity = :quantity 
@@ -60,6 +69,7 @@ class Cart {
                     $updateStmt->bindParam(":product_id", $product_id);
                     $updateStmt->execute();
                 } else {
+                    error_log("Inserting new cart item");
                     // Insert new cart item
                     $insertQuery = "INSERT INTO cart (user_id, product_id, quantity) 
                                   VALUES (:user_id, :product_id, :quantity)";
@@ -70,16 +80,20 @@ class Cart {
                     $insertStmt->execute();
                 }
             } else {
+                error_log("Guest user cart operation");
                 // For guests, check session
                 $newQuantity = (isset($_SESSION['cart'][$product_id]) ? $_SESSION['cart'][$product_id] : 0) + $quantity;
+                error_log("Guest new quantity will be: " . $newQuantity);
                 
                 if ($newQuantity > $product['stock']) {
+                    error_log("Not enough stock for guest");
                     return ['success' => false, 'message' => 'Not enough stock'];
                 }
                 
                 $_SESSION['cart'][$product_id] = $newQuantity;
             }
             
+            error_log("Successfully added to cart");
             return ['success' => true, 'message' => 'Product added to cart'];
             
         } catch (PDOException $e) {

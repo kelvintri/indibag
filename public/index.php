@@ -121,7 +121,30 @@ try {
                 require_once ROOT_PATH . '/includes/admin-layout.php';
                 exit;
                 break;
-                
+
+            case '/admin/products/create' === $path:
+                AdminAuth::requireAdmin();
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    require_once ROOT_PATH . '/pages/admin/products/create.php';
+                    exit;
+                }
+                $pageTitle = 'Create Product';
+                $content = ROOT_PATH . '/pages/admin/products/create-form.php';
+                require_once ROOT_PATH . '/includes/admin-layout.php';
+                exit;
+                break;
+
+            case '/admin/products/update' === $path:
+                AdminAuth::requireAdmin();
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    require_once ROOT_PATH . '/pages/admin/products/edit.php';
+                    exit;
+                }
+                http_response_code(405);
+                echo json_encode(['error' => 'Method not allowed']);
+                exit;
+                break;
+
             case '/admin/users' === $path:
                 AdminAuth::requireAdmin();
                 $pageTitle = 'Manage Users';

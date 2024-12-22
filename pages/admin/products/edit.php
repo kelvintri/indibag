@@ -34,7 +34,7 @@ try {
             brand_id = :brand_id,
             price = :price,
             stock = :stock,
-            updated_at = NOW()
+            updated_at = CURRENT_TIMESTAMP
         WHERE id = :id AND deleted_at IS NULL
     ");
 
@@ -49,33 +49,114 @@ try {
     ]);
 
     // Handle image upload if provided
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $image = $_FILES['image'];
-        $fileName = uniqid() . '_' . basename($image['name']);
-        $uploadDir = __DIR__ . '/../../../public/uploads/products/';
+    if (isset($_FILES['primary_image']) && $_FILES['primary_image']['error'] === UPLOAD_ERR_OK) {
+        $image = $_FILES['primary_image'];
         
-        // Create directory if it doesn't exist
-        if (!file_exists($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
+        // Get existing primary image
+        $stmt = $conn->prepare("SELECT image_url FROM product_galleries WHERE product_id = ? AND is_primary = 1");
+        $stmt->execute([$product_id]);
+        $existingImage = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Move uploaded file
-        if (move_uploaded_file($image['tmp_name'], $uploadDir . $fileName)) {
-            // Update or insert into product_galleries
-            $stmt = $conn->prepare("
-                INSERT INTO product_galleries (product_id, image_url, is_primary, created_at)
-                VALUES (:product_id, :image_url, 1, NOW())
-                ON DUPLICATE KEY UPDATE 
-                    image_url = VALUES(image_url),
-                    updated_at = NOW()
-            ");
+        if ($existingImage && $existingImage['image_url']) {
+            // Use the existing path but replace the file
+            $oldFile = __DIR__ . '/../../../public' . $existingImage['image_url'];
+            $uploadDir = dirname($oldFile);
+            
+            // Create directory if it doesn't exist
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
 
-            $stmt->execute([
-                ':product_id' => $product_id,
-                ':image_url' => '/uploads/products/' . $fileName
-            ]);
+            // Move uploaded file to replace the existing one
+            if (move_uploaded_file($image['tmp_name'], $oldFile)) {
+                // Update timestamp in database
+                $stmt = $conn->prepare("
+                    UPDATE product_galleries 
+                    SET updated_at = CURRENT_TIMESTAMP
+                    WHERE product_id = :product_id AND is_primary = 1
+                ");
+                $stmt->execute([':product_id' => $product_id]);
+            } else {
+                throw new Exception('Failed to upload primary image');
+            }
         } else {
-            throw new Exception('Failed to upload image');
+            // No existing image, create new one in default location
+            $fileName = uniqid() . '_' . basename($image['name']);
+            $uploadDir = __DIR__ . '/../../../public/assets/images/backpacks/primary/';
+            
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            if (move_uploaded_file($image['tmp_name'], $uploadDir . $fileName)) {
+                $stmt = $conn->prepare("
+                    INSERT INTO product_galleries (product_id, image_url, is_primary, created_at, updated_at)
+                    VALUES (:product_id, :image_url, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ");
+
+                $stmt->execute([
+                    ':product_id' => $product_id,
+                    ':image_url' => '/assets/images/backpacks/primary/' . $fileName
+                ]);
+            } else {
+                throw new Exception('Failed to upload primary image');
+            }
+        }
+    }
+
+    // Handle hover image upload if provided
+    if (isset($_FILES['hover_image']) && $_FILES['hover_image']['error'] === UPLOAD_ERR_OK) {
+        $image = $_FILES['hover_image'];
+        
+        // Get existing hover image
+        $stmt = $conn->prepare("SELECT image_url FROM product_galleries WHERE product_id = ? AND is_primary = 0");
+        $stmt->execute([$product_id]);
+        $existingImage = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($existingImage && $existingImage['image_url']) {
+            // Use the existing path but replace the file
+            $oldFile = __DIR__ . '/../../../public' . $existingImage['image_url'];
+            $uploadDir = dirname($oldFile);
+            
+            // Create directory if it doesn't exist
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            // Move uploaded file to replace the existing one
+            if (move_uploaded_file($image['tmp_name'], $oldFile)) {
+                // Update timestamp in database
+                $stmt = $conn->prepare("
+                    UPDATE product_galleries 
+                    SET updated_at = CURRENT_TIMESTAMP
+                    WHERE product_id = :product_id AND is_primary = 0
+                ");
+                $stmt->execute([':product_id' => $product_id]);
+            } else {
+                throw new Exception('Failed to upload hover image');
+            }
+        } else {
+            // No existing image, create new one in default location
+            $fileName = uniqid() . '_' . basename($image['name']);
+            $uploadDir = __DIR__ . '/../../../public/assets/images/backpacks/hover/';
+            
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            if (move_uploaded_file($image['tmp_name'], $uploadDir . $fileName)) {
+                $stmt = $conn->prepare("
+                    INSERT INTO product_galleries (product_id, image_url, is_primary, created_at, updated_at)
+                    VALUES (:product_id, :image_url, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ");
+
+                $stmt->execute([
+                    ':product_id' => $product_id,
+                    ':image_url' => '/assets/images/backpacks/hover/' . $fileName
+                ]);
+            } else {
+                throw new Exception('Failed to upload hover image');
+            }
         }
     }
 

@@ -659,10 +659,7 @@ function submitEditForm() {
     
     fetch('/admin/products/update', {
         method: 'POST',
-        body: formData,
-        headers: {
-            // Do not set Content-Type here, let the browser handle it
-        }
+        body: formData
     })
     .then(async response => {
         const text = await response.text();

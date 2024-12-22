@@ -156,7 +156,7 @@ $brands = $brandsStmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Listing</title>
+    <title>Bag Collection</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -166,338 +166,304 @@ $brands = $brandsStmt->fetchAll(PDO::FETCH_ASSOC);
     </style>
     <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
 </head>
-<body class="bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<body class="bg-white">
+
+    <!-- Breadcrumb -->
+    <div class="container mx-auto px-4 py-4">
+        <div class="flex items-center space-x-2 text-sm text-gray-500">
+            <a href="/" class="hover:text-gray-900">Home</a>
+            <span>/</span>
+            <span class="text-gray-900">Browse Products</span>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
         <div class="flex flex-col lg:flex-row gap-8">
             <!-- Filters Sidebar -->
             <div class="w-full lg:w-64 flex-shrink-0" x-data="{ isOpen: false }">
-                <button @click="isOpen = !isOpen" class="lg:hidden w-full mb-4 px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <button @click="isOpen = !isOpen" 
+                        class="lg:hidden w-full mb-4 px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
                     <span x-text="isOpen ? 'Hide Filters' : 'Show Filters'"></span>
                 </button>
+
                 <div :class="{'hidden': !isOpen}" class="lg:block space-y-6 bg-white p-6 rounded-lg shadow-sm">
                     <form method="GET" class="space-y-6">
                         <!-- Category Filter -->
-                        <div class="border-b pb-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">CATEGORY</h3>
-                            <div class="space-y-2">
+                        <div class="border-b pb-6" x-data="{ isExpanded: true }">
+                            <button type="button" 
+                                    @click="isExpanded = !isExpanded"
+                                    class="flex items-center justify-between w-full">
+                                <h3 class="text-lg font-medium text-gray-900">CATEGORY</h3>
+                                <svg class="w-5 h-5 transform transition-transform" 
+                                     :class="{'rotate-180': !isExpanded}"
+                                     fill="none" 
+                                     stroke="currentColor" 
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div class="space-y-2 mt-4" x-show="isExpanded">
                                 <?php foreach ($categories as $cat): ?>
-                                    <div class="flex items-center">
+                                <div class="flex items-center justify-between">
+                                    <label class="flex items-center">
                                         <input type="checkbox" 
-                                               id="category_<?= $cat['id'] ?>" 
                                                name="category[]" 
                                                value="<?= $cat['id'] ?>"
                                                <?= (is_array($category_id) && in_array($cat['id'], $category_id)) ? 'checked' : '' ?>
-                                               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                        <label for="category_<?= $cat['id'] ?>" 
-                                               class="ml-3 text-sm text-gray-600">
-                                            <?= htmlspecialchars($cat['name']) ?>
-                                        </label>
-                                    </div>
+                                               class="h-4 w-4 rounded border-gray-300 text-blue-600">
+                                        <span class="ml-2 text-sm text-gray-600"><?= htmlspecialchars($cat['name']) ?></span>
+                                    </label>
+                                </div>
                                 <?php endforeach; ?>
                             </div>
                         </div>
 
                         <!-- Price Filter -->
-                        <div class="border-b pb-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">PRICE</h3>
-                            <div class="space-y-2">
+                        <div class="border-b pb-6" x-data="{ isExpanded: false }">
+                            <button type="button" 
+                                    @click="isExpanded = !isExpanded"
+                                    class="flex items-center justify-between w-full">
+                                <h3 class="text-lg font-medium text-gray-900">PRICE</h3>
+                                <svg class="w-5 h-5 transform transition-transform" 
+                                     :class="{'rotate-180': !isExpanded}"
+                                     fill="none" 
+                                     stroke="currentColor" 
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div class="space-y-2 mt-4" x-show="isExpanded">
+                                <?php
+                                $price_ranges = [
+                                    '0-3000000' => 'Under IDR 3M',
+                                    '3000000-5000000' => 'IDR 3M - 5M',
+                                    '5000000-10000000' => 'IDR 5M - 10M',
+                                    '10000000-20000000' => 'IDR 10M - 20M',
+                                    '20000000-999999999' => 'Above IDR 20M'
+                                ];
+                                foreach ($price_ranges as $range => $label):
+                                ?>
                                 <div class="flex items-center">
-                                    <input type="checkbox" 
-                                           name="price_range[]" 
-                                           value="0-3000000" 
-                                           id="price_under_3m"
-                                           <?= (is_array($price_range) && in_array('0-3000000', $price_range)) ? 'checked' : '' ?>
-                                           class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                    <label for="price_under_3m" class="ml-3 text-sm text-gray-600">
-                                        UNDER IDR 3 M
-                                    </label>
-                                </div>
-                                <div class="flex items-center">
-                                    <input type="checkbox" 
-                                           name="price_range[]" 
-                                           value="3000000-5000000" 
-                                           id="price_3m_5m"
-                                           <?= (is_array($price_range) && in_array('3000000-5000000', $price_range)) ? 'checked' : '' ?>
-                                           class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                    <label for="price_3m_5m" class="ml-3 text-sm text-gray-600">
-                                        IDR 3 M - IDR 5 M
-                                    </label>
-                                </div>
-                                <div class="flex items-center">
-                                    <input type="checkbox" 
-                                           name="price_range[]" 
-                                           value="5000000-10000000" 
-                                           id="price_5m_10m"
-                                           <?= (is_array($price_range) && in_array('5000000-10000000', $price_range)) ? 'checked' : '' ?>
-                                           class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                    <label for="price_5m_10m" class="ml-3 text-sm text-gray-600">
-                                        IDR 5 M - IDR 10 M
-                                    </label>
-                                </div>
-                                <div class="flex items-center">
-                                    <input type="checkbox" 
-                                           name="price_range[]" 
-                                           value="10000000-20000000" 
-                                           id="price_10m_20m"
-                                           <?= (is_array($price_range) && in_array('10000000-20000000', $price_range)) ? 'checked' : '' ?>
-                                           class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                    <label for="price_10m_20m" class="ml-3 text-sm text-gray-600">
-                                        IDR 10 M - IDR 20 M
-                                    </label>
-                                </div>
-                                <div class="flex items-center">
-                                    <input type="checkbox" 
-                                           name="price_range[]" 
-                                           value="20000000-999999999" 
-                                           id="price_above_20m"
-                                           <?= (is_array($price_range) && in_array('20000000-999999999', $price_range)) ? 'checked' : '' ?>
-                                           class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                    <label for="price_above_20m" class="ml-3 text-sm text-gray-600">
-                                        ABOVE IDR 20 M
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Brands Filter -->
-                        <div class="border-b pb-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">BRANDS</h3>
-                            <div class="space-y-2">
-                                <?php foreach ($brands as $brand): ?>
-                                    <div class="flex items-center">
+                                    <label class="flex items-center">
                                         <input type="checkbox" 
-                                               id="brand_<?= $brand['id'] ?>" 
-                                               name="brand[]" 
-                                               value="<?= $brand['id'] ?>"
-                                               <?= (is_array($brand_id) && in_array($brand['id'], $brand_id)) ? 'checked' : '' ?>
-                                               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                        <label for="brand_<?= $brand['id'] ?>" 
-                                               class="ml-3 text-sm text-gray-600">
-                                            <?= htmlspecialchars($brand['name']) ?>
-                                        </label>
-                                    </div>
+                                               name="price_range[]" 
+                                               value="<?= $range ?>"
+                                               <?= (is_array($price_range) && in_array($range, $price_range)) ? 'checked' : '' ?>
+                                               class="h-4 w-4 rounded border-gray-300 text-blue-600">
+                                        <span class="ml-2 text-sm text-gray-600"><?= $label ?></span>
+                                    </label>
+                                </div>
                                 <?php endforeach; ?>
                             </div>
                         </div>
 
-                        <!-- Apply Filters Button -->
+                        <!-- Brands Filter -->
+                        <div class="border-b pb-6" x-data="{ isExpanded: false }">
+                            <button type="button" 
+                                    @click="isExpanded = !isExpanded"
+                                    class="flex items-center justify-between w-full">
+                                <h3 class="text-lg font-medium text-gray-900">BRANDS</h3>
+                                <svg class="w-5 h-5 transform transition-transform" 
+                                     :class="{'rotate-180': !isExpanded}"
+                                     fill="none" 
+                                     stroke="currentColor" 
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div class="space-y-2 mt-4" x-show="isExpanded">
+                                <?php foreach ($brands as $brand): ?>
+                                <div class="flex items-center justify-between">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" 
+                                               name="brand[]" 
+                                               value="<?= $brand['id'] ?>"
+                                               <?= (is_array($brand_id) && in_array($brand['id'], $brand_id)) ? 'checked' : '' ?>
+                                               class="h-4 w-4 rounded border-gray-300 text-blue-600">
+                                        <span class="ml-2 text-sm text-gray-600"><?= htmlspecialchars($brand['name']) ?></span>
+                                    </label>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+
                         <button type="submit" 
-                                class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-150 ease-in-out">
+                                class="w-full bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-800 transition duration-150">
                             Apply Filters
                         </button>
                     </form>
                 </div>
             </div>
 
-            <!-- Main Content -->
+            <!-- Product Grid -->
             <div class="flex-1">
-                <!-- Sort and Search -->
-                <div class="mb-6">
-                    <form method="GET" class="flex flex-col sm:flex-row gap-4">
-                        <!-- Preserve filter values -->
-                        <?php if (!empty($category_id)): ?>
-                            <?php foreach ($category_id as $id): ?>
-                                <input type="hidden" name="category[]" value="<?= htmlspecialchars($id) ?>">
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                        
-                        <?php if (!empty($brand_id)): ?>
-                            <?php foreach ($brand_id as $id): ?>
-                                <input type="hidden" name="brand[]" value="<?= htmlspecialchars($id) ?>">
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                        
-                        <?php if (!empty($price_range)): ?>
-                            <?php foreach ($price_range as $range): ?>
-                                <input type="hidden" name="price_range[]" value="<?= htmlspecialchars($range) ?>">
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+                <!-- Sort and Results Info -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <p class="text-sm text-gray-500">
+                            Showing <span class="font-medium"><?= count($products) ?></span> results
+                            <?php if ($search): ?>
+                                for "<?= htmlspecialchars($search) ?>"
+                            <?php endif; ?>
+                        </p>
+                        <?php if (!empty($category_id) || !empty($brand_id) || !empty($price_range)): ?>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <?php 
+                            // Get selected category names
+                            if (!empty($category_id)) {
+                                foreach ($categories as $cat) {
+                                    if (in_array($cat['id'], $category_id)) {
+                                        ?>
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100">
+                                            <?= htmlspecialchars($cat['name']) ?>
+                                            <button onclick="removeFilter('category', <?= $cat['id'] ?>)" class="ml-1">&times;</button>
+                                        </span>
+                                        <?php
+                                    }
+                                }
+                            }
 
-                        <div class="w-full sm:w-48">
-                            <select name="sort" id="sort" 
-                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    onchange="this.form.submit()">
-                                <option value="newest" <?= $sort === 'newest' ? 'selected' : '' ?>>Newest</option>
-                                <option value="price_asc" <?= $sort === 'price_asc' ? 'selected' : '' ?>>Price: Low to High</option>
-                                <option value="price_desc" <?= $sort === 'price_desc' ? 'selected' : '' ?>>Price: High to Low</option>
-                            </select>
+                            // Get selected brand names
+                            if (!empty($brand_id)) {
+                                foreach ($brands as $brand) {
+                                    if (in_array($brand['id'], $brand_id)) {
+                                        ?>
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100">
+                                            <?= htmlspecialchars($brand['name']) ?>
+                                            <button onclick="removeFilter('brand', <?= $brand['id'] ?>)" class="ml-1">&times;</button>
+                                        </span>
+                                        <?php
+                                    }
+                                }
+                            }
+
+                            // Show price range filters
+                            if (!empty($price_range)) {
+                                foreach ($price_range as $range) {
+                                    $label = $price_ranges[$range] ?? $range;
+                                    ?>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100">
+                                        <?= htmlspecialchars($label) ?>
+                                        <button onclick="removeFilter('price_range', '<?= $range ?>')" class="ml-1">&times;</button>
+                                    </span>
+                                    <?php
+                                }
+                            }
+                            ?>
                         </div>
-                        <div class="flex-1">
-                            <div class="flex gap-2">
-                                <input type="text" name="search" 
-                                       value="<?= htmlspecialchars($search) ?>"
-                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                       placeholder="Search products...">
-                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-150 ease-in-out">
-                                    Search
-                                </button>
-                            </div>
-                        </div>
-                    </form>
+                        <?php endif; ?>
+                    </div>
+
+                    <select name="sort" 
+                            onchange="window.location.href=this.value"
+                            class="block w-48 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="?<?= http_build_query(array_merge($_GET, ['sort' => 'newest'])) ?>" 
+                                <?= $sort === 'newest' ? 'selected' : '' ?>>
+                            Newest
+                        </option>
+                        <option value="?<?= http_build_query(array_merge($_GET, ['sort' => 'price_asc'])) ?>"
+                                <?= $sort === 'price_asc' ? 'selected' : '' ?>>
+                            Price: Low to High
+                        </option>
+                        <option value="?<?= http_build_query(array_merge($_GET, ['sort' => 'price_desc'])) ?>"
+                                <?= $sort === 'price_desc' ? 'selected' : '' ?>>
+                            Price: High to Low
+                        </option>
+                    </select>
                 </div>
 
                 <!-- Products Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <?php foreach ($products as $product): ?>
-                        <div class="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition duration-300 ease-in-out"
-                             x-data="{ 
-                                isHovered: false,
-                                showNotification: false,
-                                notificationType: 'success',
-                                notificationMessage: '',
-                                isLoading: false,
-                                async addToCart(productId) {
-                                    if (this.isLoading) return; // Prevent double clicks
-                                    this.isLoading = true;
-                                    console.log('Adding to cart:', productId);
-                                    
-                                    try {
-                                        const response = await fetch('/cart/add', {
-                                            method: 'POST',
-                                            headers: {
-                                                'Content-Type': 'application/x-www-form-urlencoded',
-                                            },
-                                            body: `product_id=${productId}&quantity=1`
-                                        });
-                                        
-                                        const data = await response.json();
-                                        console.log('Cart response:', data);
-                                        
-                                        this.notificationType = data.success ? 'success' : 'error';
-                                        this.notificationMessage = data.message;
-                                        this.showNotification = true;
-                                        
-                                        setTimeout(() => {
-                                            this.showNotification = false;
-                                        }, 2000);
-
-                                        if (data.success) {
-                                            const cartCountEl = document.querySelector('.cart-count');
-                                            if (cartCountEl) {
-                                                const countResponse = await fetch('/cart/count');
-                                                const count = await countResponse.text();
-                                                cartCountEl.textContent = count;
-                                            }
-                                        }
-                                    } catch (error) {
-                                        console.error('Error adding to cart:', error);
-                                        this.notificationType = 'error';
-                                        this.notificationMessage = 'Error adding to cart';
-                                        this.showNotification = true;
-                                        setTimeout(() => {
-                                            this.showNotification = false;
-                                        }, 2000);
-                                    } finally {
-                                        this.isLoading = false;
-                                    }
-                                }
-                             }">
-                            <!-- Product Image -->
-                            <div class="relative pt-[125%]">
-                                <div class="absolute inset-0 overflow-hidden bg-gray-100"
-                                     @mouseenter="isHovered = true" 
-                                     @mouseleave="isHovered = false">
-                                    <a href="/products/<?= htmlspecialchars($product['slug']) ?>" class="block w-full h-full">
-                                        <img :src="isHovered && '<?= getImageUrl($product['hover_image']) ?>' ? '<?= getImageUrl($product['hover_image']) ?>' : '<?= getImageUrl($product['primary_image']) ?>'"
-                                             alt="<?= htmlspecialchars($product['name']) ?>"
-                                             class="w-full h-full object-cover object-center transition-opacity duration-300"
-                                             onerror="this.src='<?= asset('images/placeholder.jpg') ?>'">
-                                    </a>
-                                </div>
-                            </div>
-
-                            <!-- Product Info -->
-                            <div class="p-4">
-                                <a href="/products/<?= htmlspecialchars($product['slug']) ?>" class="block mb-2">
-                                    <h3 class="text-lg font-semibold text-gray-900 hover:text-blue-600 transition duration-150 ease-in-out">
-                                        <?= htmlspecialchars($product['name']) ?>
-                                    </h3>
-                                </a>
-                                <p class="text-sm text-gray-600 mb-2">
-                                    <?= htmlspecialchars($product['brand_name']) ?>
-                                </p>
-                                <p class="text-gray-900 font-medium mb-4">
-                                    IDR <?= number_format($product['price'], 0, ',', '.') ?>
-                                </p>
-                                <?php if ($product['stock'] > 0): ?>
-                                    <button @click="addToCart(<?= $product['id'] ?>)" 
-                                            :disabled="isLoading"
-                                            class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed">
-                                        <span x-text="isLoading ? 'Adding...' : 'Add to Cart'"></span>
-                                    </button>
-                                <?php else: ?>
-                                    <button disabled 
-                                            class="w-full bg-gray-300 text-gray-500 px-4 py-2 rounded-md cursor-not-allowed">
-                                        Out of Stock
-                                    </button>
-                                <?php endif; ?>
-                            </div>
-
-                            <!-- Notification -->
-                            <div x-show="showNotification"
-                                 x-transition:enter="transition ease-out duration-300"
-                                 x-transition:enter-start="opacity-0 transform translate-x-full"
-                                 x-transition:enter-end="opacity-100 transform translate-x-0"
-                                 x-transition:leave="transition ease-in duration-300"
-                                 x-transition:leave-start="opacity-100 transform translate-x-0"
-                                 x-transition:leave-end="opacity-0 transform translate-x-full"
-                                 :class="notificationType === 'success' ? 'bg-green-500' : 'bg-red-500'"
-                                 class="fixed top-4 right-4 text-white px-6 py-3 rounded-md shadow-lg z-50">
-                                <span x-text="notificationMessage"></span>
-                            </div>
+                    <div class="group relative">
+                        <div class="relative aspect-[3/4] mb-4 bg-gray-100">
+                            <a href="/products/<?= htmlspecialchars($product['slug']) ?>" class="block w-full h-full">
+                                <img src="<?= getImageUrl($product['primary_image']) ?>"
+                                     data-hover-src="<?= getImageUrl($product['hover_image']) ?>"
+                                     alt="<?= htmlspecialchars($product['name']) ?>"
+                                     class="w-full h-full object-cover transition-opacity duration-300"
+                                     onmouseover="this.src=this.dataset.hoverSrc"
+                                     onmouseout="this.src='<?= getImageUrl($product['primary_image']) ?>'"
+                                     onerror="this.src='<?= asset('images/placeholder.jpg') ?>'">
+                            </a>
                         </div>
+                        <h3 class="font-medium mb-1">
+                            <a href="/products/<?= htmlspecialchars($product['slug']) ?>">
+                                <?= htmlspecialchars($product['name']) ?>
+                            </a>
+                        </h3>
+                        <p class="text-sm text-gray-500 mb-2"><?= htmlspecialchars($product['brand_name']) ?></p>
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold">
+                                IDR <?= number_format($product['price'], 0, ',', '.') ?>
+                            </span>
+                        </div>
+                        <?php if ($product['stock'] > 0): ?>
+                        <button onclick="addToCart(<?= $product['id'] ?>)"
+                                class="mt-4 w-full bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-800 transition duration-150">
+                            Add to Cart
+                        </button>
+                        <?php else: ?>
+                        <button disabled 
+                                class="mt-4 w-full bg-gray-200 text-gray-500 px-4 py-2 rounded-md cursor-not-allowed">
+                            Out of Stock
+                        </button>
+                        <?php endif; ?>
+                    </div>
                     <?php endforeach; ?>
                 </div>
 
                 <!-- Pagination -->
                 <?php if ($total_pages > 1): ?>
-                    <div class="mt-8 flex justify-center">
-                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                            <?php
-                            // Previous page
-                            if ($page > 1): ?>
-                                <a href="?page=<?= $page-1 ?>&<?= http_build_query(array_filter([
-                                    'category' => $category_id,
-                                    'brand' => $brand_id,
-                                    'price_range' => $price_range,
-                                    'search' => $search,
-                                    'sort' => $sort
-                                ])) ?>" 
-                                   class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                    <span class="sr-only">Previous</span>
-                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                    </svg>
-                                </a>
-                            <?php endif; ?>
+                <div class="mt-8">
+                    <!-- Page info -->
+                    <p class="text-sm text-gray-500 text-center mb-4">
+                        Page <?= $page ?> of <?= $total_pages ?>
+                    </p>
+                    
+                    <!-- Pagination buttons -->
+                    <nav class="flex justify-center items-center gap-1" aria-label="Pagination">
+                        <?php if ($page > 1): ?>
+                        <a href="?page=<?= $page-1 ?>&<?= http_build_query(array_filter([
+                            'category' => $category_id,
+                            'brand' => $brand_id,
+                            'price_range' => $price_range,
+                            'search' => $search,
+                            'sort' => $sort
+                        ])) ?>" 
+                           class="px-3 py-2 rounded-md bg-white border hover:bg-gray-50">
+                            Previous
+                        </a>
+                        <?php endif; ?>
 
-                            <?php
-                            // Calculate range of pages to show
-                            $range = 2;
-                            $start = max(1, $page - $range);
-                            $end = min($total_pages, $page + $range);
+                        <?php
+                        $range = 2;
+                        $start = max(1, $page - $range);
+                        $end = min($total_pages, $page + $range);
 
-                            // Show first page if not in range
-                            if ($start > 1): ?>
-                                <a href="?page=1&<?= http_build_query(array_filter([
-                                    'category' => $category_id,
-                                    'brand' => $brand_id,
-                                    'price_range' => $price_range,
-                                    'search' => $search,
-                                    'sort' => $sort
-                                ])) ?>" 
-                                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                    1
-                                </a>
-                                <?php if ($start > 2): ?>
-                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                                        ...
-                                    </span>
-                                <?php endif;
-                            endif;
+                        if ($start > 1): ?>
+                            <a href="?page=1&<?= http_build_query(array_filter([
+                                'category' => $category_id,
+                                'brand' => $brand_id,
+                                'price_range' => $price_range,
+                                'search' => $search,
+                                'sort' => $sort
+                            ])) ?>" 
+                               class="px-3 py-2 rounded-md bg-white border hover:bg-gray-50">
+                                1
+                            </a>
+                            <?php if ($start > 2): ?>
+                                <span class="px-3 py-2">...</span>
+                            <?php endif;
+                        endif;
 
-                            // Page numbers
-                            for ($i = $start; $i <= $end; $i++): ?>
+                        for ($i = $start; $i <= $end; $i++): ?>
+                            <?php if ($i == $page): ?>
+                                <span class="px-3 py-2 rounded-md bg-gray-900 text-white font-semibold">
+                                    <?= $i ?>
+                                </span>
+                            <?php else: ?>
                                 <a href="?page=<?= $i ?>&<?= http_build_query(array_filter([
                                     'category' => $category_id,
                                     'brand' => $brand_id,
@@ -505,52 +471,71 @@ $brands = $brandsStmt->fetchAll(PDO::FETCH_ASSOC);
                                     'search' => $search,
                                     'sort' => $sort
                                 ])) ?>" 
-                                   class="relative inline-flex items-center px-4 py-2 border <?= $page === $i ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50' ?>">
+                                   class="px-3 py-2 rounded-md bg-white border hover:bg-gray-50">
                                     <?= $i ?>
                                 </a>
-                            <?php endfor;
-
-                            // Show last page if not in range
-                            if ($end < $total_pages): ?>
-                                <?php if ($end < $total_pages - 1): ?>
-                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                                        ...
-                                    </span>
-                                <?php endif; ?>
-                                <a href="?page=<?= $total_pages ?>&<?= http_build_query(array_filter([
-                                    'category' => $category_id,
-                                    'brand' => $brand_id,
-                                    'price_range' => $price_range,
-                                    'search' => $search,
-                                    'sort' => $sort
-                                ])) ?>" 
-                                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                    <?= $total_pages ?>
-                                </a>
                             <?php endif; ?>
+                        <?php endfor;
 
-                            <?php 
-                            // Next page
-                            if ($page < $total_pages): ?>
-                                <a href="?page=<?= $page+1 ?>&<?= http_build_query(array_filter([
-                                    'category' => $category_id,
-                                    'brand' => $brand_id,
-                                    'price_range' => $price_range,
-                                    'search' => $search,
-                                    'sort' => $sort
-                                ])) ?>" 
-                                   class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                    <span class="sr-only">Next</span>
-                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                                    </svg>
-                                </a>
+                        if ($end < $total_pages): ?>
+                            <?php if ($end < $total_pages - 1): ?>
+                                <span class="px-3 py-2">...</span>
                             <?php endif; ?>
-                        </nav>
-                    </div>
+                            <a href="?page=<?= $total_pages ?>&<?= http_build_query(array_filter([
+                                'category' => $category_id,
+                                'brand' => $brand_id,
+                                'price_range' => $price_range,
+                                'search' => $search,
+                                'sort' => $sort
+                            ])) ?>" 
+                               class="px-3 py-2 rounded-md bg-white border hover:bg-gray-50">
+                                <?= $total_pages ?>
+                            </a>
+                        <?php endif;
+
+                        if ($page < $total_pages): ?>
+                            <a href="?page=<?= $page+1 ?>&<?= http_build_query(array_filter([
+                                'category' => $category_id,
+                                'brand' => $brand_id,
+                                'price_range' => $price_range,
+                                'search' => $search,
+                                'sort' => $sort
+                            ])) ?>" 
+                               class="px-3 py-2 rounded-md bg-white border hover:bg-gray-50">
+                                Next
+                            </a>
+                        <?php endif; ?>
+                    </nav>
+                </div>
                 <?php endif; ?>
             </div>
         </div>
     </div>
+
+
+    <script>
+    function removeFilter(filterType, value) {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Get current values as array
+        let currentValues = urlParams.getAll(filterType + '[]');
+        
+        // Remove the specific value
+        currentValues = currentValues.filter(v => v != value);
+        
+        // Remove all instances of this filter
+        urlParams.delete(filterType + '[]');
+        
+        // Add back remaining values
+        currentValues.forEach(v => {
+            urlParams.append(filterType + '[]', v);
+        });
+        
+        // Redirect with updated filters
+        window.location.search = urlParams.toString();
+    }
+
+    // Keep the existing Alpine.js and cart functionality
+    </script>
 </body>
 </html>

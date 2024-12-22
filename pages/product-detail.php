@@ -46,119 +46,236 @@ $relatedProducts = $relatedStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Output the HTML directly, no need for ob_start/ob_get_clean
 ?>
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <nav class="flex mb-8" aria-label="Breadcrumb">
-        <ol class="inline-flex items-center space-x-1 md:space-x-3">
-            <li class="inline-flex items-center">
-                <a href="/" class="text-gray-700 hover:text-blue-600">Home</a>
-            </li>
-            <li>
-                <div class="flex items-center">
-                    <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                    </svg>
-                    <a href="/categories/<?= $product['category_slug'] ?>" class="text-gray-700 hover:text-blue-600">
-                        <?= htmlspecialchars($product['category_name']) ?>
-                    </a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= htmlspecialchars($product['name']) ?></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .star-rating {
+            color: #FFD700;
+        }
+        .thumbnail:hover {
+            opacity: 0.75;
+            transition: opacity 0.2s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Breadcrumb -->
+        <nav class="flex items-center gap-2 text-sm mb-8">
+            <a href="/" class="text-gray-600 hover:text-gray-900">Browse Products</a>
+            <span class="text-gray-400">/</span>
+            <a href="/categories/<?= $product['category_slug'] ?>" class="text-gray-600 hover:text-gray-900">
+                <?= htmlspecialchars($product['category_name']) ?>
+            </a>
+            <span class="text-gray-400">/</span>
+            <span class="text-gray-900"><?= htmlspecialchars($product['name']) ?></span>
+        </nav>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <!-- Product Images -->
+            <div x-data="{ activeImage: '<?= getImageUrl($images[0]['image_url']) ?>' }">
+                <!-- Main Image -->
+                <div class="relative max-w-lg mx-auto aspect-[3/4] mb-4 bg-gray-100 rounded-lg overflow-hidden">
+                    <img :src="activeImage" 
+                         alt="<?= htmlspecialchars($product['name']) ?>" 
+                         class="w-full h-full object-cover">
+                    
+                    <!-- Navigation arrows -->
+                    <button class="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <button class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
                 </div>
-            </li>
-            <li>
-                <div class="flex items-center">
-                    <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                    </svg>
-                    <span class="text-gray-500"><?= htmlspecialchars($product['name']) ?></span>
+
+                <!-- Thumbnails -->
+                <div class="max-w-lg mx-auto grid grid-cols-5 gap-2">
+                    <?php foreach ($images as $image): ?>
+                    <button @mouseover="activeImage = '<?= getImageUrl($image['image_url']) ?>'"
+                            class="thumbnail aspect-square bg-gray-100 rounded-md overflow-hidden">
+                        <img src="<?= getImageUrl($image['image_url']) ?>" 
+                             alt="<?= htmlspecialchars($product['name']) ?>"
+                             class="w-full h-full object-cover">
+                    </button>
+                    <?php endforeach; ?>
                 </div>
-            </li>
-        </ol>
-    </nav>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <!-- Product Images -->
-        <div x-data="{ activeImage: '<?= getImageUrl($images[0]['image_url']) ?>' }">
-            <div class="mb-4 aspect-w-1 aspect-h-1">
-                <img :src="activeImage" 
-                     alt="<?= htmlspecialchars($product['name']) ?>" 
-                     class="w-full h-full object-cover rounded-lg">
-            </div>
-            <div class="grid grid-cols-4 gap-4">
-                <?php foreach ($images as $image): ?>
-                <button @mouseover="activeImage = '<?= getImageUrl($image['image_url']) ?>'"
-                        class="aspect-w-1 aspect-h-1">
-                    <img src="<?= getImageUrl($image['image_url']) ?>" 
-                         alt="<?= htmlspecialchars($product['name']) ?>"
-                         class="w-full h-full object-cover rounded-lg">
-                </button>
-                <?php endforeach; ?>
-            </div>
-        </div>
-
-        <!-- Product Info -->
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900 mb-4">
-                <?= htmlspecialchars($product['name']) ?>
-            </h1>
-            
-            <div class="mb-4">
-                <a href="/brands/<?= $product['brand_slug'] ?>" 
-                   class="text-blue-600 hover:text-blue-800 font-medium">
-                    <?= htmlspecialchars($product['brand_name']) ?>
-                </a>
             </div>
 
-            <div class="text-2xl font-bold text-gray-900 mb-6">
-                Rp <?= number_format($product['price'], 0, ',', '.') ?>
-            </div>
+            <!-- Product Info -->
+            <div class="flex flex-col lg:pl-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-4">
+                    <?= htmlspecialchars($product['name']) ?>
+                </h1>
 
-            <div class="prose prose-sm text-gray-500 mb-6">
-                <?= nl2br(htmlspecialchars($product['description'])) ?>
-            </div>
+                <!-- Rating -->
+                <div class="flex items-center gap-2 mb-6">
+                    <div class="flex star-rating">
+                        <?php for($i = 0; $i < 5; $i++): ?>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                            </svg>
+                        <?php endfor; ?>
+                    </div>
+                    <span class="text-gray-600">(4.9)</span>
+                </div>
 
-            <div class="mb-6">
-                <h3 class="text-sm font-medium text-gray-900 mb-2">Product Details</h3>
-                <div class="prose prose-sm text-gray-500">
-                    <?php 
-                    // Split details by pipe and create a list
-                    $details = explode('|', $product['details']);
-                    echo '<ul class="list-disc pl-4">';
-                    foreach ($details as $detail) {
-                        echo '<li>' . htmlspecialchars(trim($detail)) . '</li>';
+                <!-- Price -->
+                <div class="text-3xl font-bold mb-8">
+                    Rp <?= number_format($product['price'], 0, ',', '.') ?>
+                </div>
+
+                <!-- Description -->
+                <div class="prose prose-sm text-gray-600 mb-8">
+                    <?= nl2br(htmlspecialchars($product['description'])) ?>
+                </div>
+
+                <!-- Product Details -->
+                <div class="mb-8">
+                    <h3 class="font-medium text-gray-900 mb-4">Product Details</h3>
+                    <div class="prose prose-sm text-gray-600">
+                        <?php 
+                        $details = explode('|', $product['details']);
+                        echo '<ul class="list-disc pl-4 space-y-2">';
+                        foreach ($details as $detail) {
+                            echo '<li>' . htmlspecialchars(trim($detail)) . '</li>';
+                        }
+                        echo '</ul>';
+                        ?>
+                    </div>
+                </div>
+
+                <!-- Stock Status -->
+                <?php if ($product['stock'] > 0): ?>
+                    <div class="mb-8">
+                        <p class="text-lg">
+                            Last <span class="font-semibold"><?= $product['stock'] ?></span> left
+                            <span class="text-gray-600">- make it yours!</span>
+                        </p>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Additional Info -->
+                <div class="grid grid-cols-2 gap-6 mb-8">
+                    <div>
+                        <h3 class="font-medium text-gray-900 mb-2">SKU</h3>
+                        <p class="text-gray-600"><?= htmlspecialchars($product['sku']) ?></p>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-900 mb-2">Condition</h3>
+                        <p class="text-gray-600"><?= htmlspecialchars($product['condition_status']) ?></p>
+                    </div>
+                </div>
+
+                <!-- Add to Cart Form -->
+                <div x-data="{ 
+                    quantity: 1,
+                    maxQuantity: <?= min($product['stock'], 10) ?>,
+                    showNotification: false,
+                    notificationType: 'success',
+                    notificationMessage: '',
+                    
+                    decrementQuantity() {
+                        if (this.quantity > 1) this.quantity--;
+                    },
+                    incrementQuantity() {
+                        if (this.quantity < this.maxQuantity) this.quantity++;
+                    },
+                    
+                    async addToCart(e) {
+                        const form = e.target;
+                        const formData = new FormData(form);
+
+                        try {
+                            const response = await fetch('/cart/add', {
+                                method: 'POST',
+                                body: formData
+                            });
+                            
+                            const data = await response.json();
+                            
+                            this.notificationType = data.success ? 'success' : 'error';
+                            this.notificationMessage = data.message;
+                            this.showNotification = true;
+                            
+                            setTimeout(() => {
+                                this.showNotification = false;
+                            }, 2000);
+
+                            if (data.success) {
+                                const cartCountEl = document.querySelector('.cart-count');
+                                if (cartCountEl) {
+                                    const countResponse = await fetch('/cart/count');
+                                    const count = await countResponse.text();
+                                    cartCountEl.textContent = count;
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error adding to cart:', error);
+                            this.notificationType = 'error';
+                            this.notificationMessage = 'Error adding to cart';
+                            this.showNotification = true;
+                            setTimeout(() => {
+                                this.showNotification = false;
+                            }, 2000);
+                        }
                     }
-                    echo '</ul>';
-                    ?>
-                </div>
-            </div>
-
-            <div class="mb-6">
-                <h3 class="text-sm font-medium text-gray-900 mb-2">SKU</h3>
-                <p class="text-gray-500"><?= htmlspecialchars($product['sku']) ?></p>
-            </div>
-
-            <div class="mb-6">
-                <h3 class="text-sm font-medium text-gray-900 mb-2">Condition</h3>
-                <p class="text-gray-500"><?= htmlspecialchars($product['condition_status']) ?></p>
-            </div>
-
-            <?php if ($product['stock'] > 0): ?>
-                <div x-data="cartForm">
-                    <form @submit.prevent="addToCart" class="mb-6">
+                }" class="mt-auto">
+                    <form @submit.prevent="addToCart" class="space-y-6">
                         <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
-                        <div class="flex items-center mb-4">
-                            <label for="quantity" class="mr-4 text-sm font-medium text-gray-900">Quantity</label>
-                            <select name="quantity" id="quantity" 
-                                    class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <?php for ($i = 1; $i <= min($product['stock'], 10); $i++): ?>
-                                    <option value="<?= $i ?>"><?= $i ?></option>
-                                <?php endfor; ?>
-                            </select>
+                        
+                        <!-- Quantity -->
+                        <div class="flex items-center gap-4">
+                            <button type="button" 
+                                    @click="decrementQuantity"
+                                    class="w-10 h-10 rounded-lg border flex items-center justify-center hover:bg-gray-50">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                                </svg>
+                            </button>
+                            <input type="number" 
+                                   name="quantity" 
+                                   x-model="quantity"
+                                   min="1" 
+                                   :max="maxQuantity"
+                                   class="w-20 h-10 rounded-lg border text-center">
+                            <button type="button" 
+                                    @click="incrementQuantity"
+                                    class="w-10 h-10 rounded-lg border flex items-center justify-center hover:bg-gray-50">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                            </button>
                         </div>
-                        <button type="submit" 
-                                class="w-full bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                            Add to Cart
-                        </button>
+
+                        <!-- Add to Cart Button -->
+                        <?php if ($product['stock'] > 0): ?>
+                            <button type="submit" 
+                                    class="w-full bg-gray-900 text-white h-12 rounded-lg hover:bg-gray-800 transition-colors">
+                                Add to cart
+                            </button>
+                        <?php else: ?>
+                            <button disabled 
+                                    class="w-full bg-gray-200 text-gray-500 h-12 rounded-lg cursor-not-allowed">
+                                Out of Stock
+                            </button>
+                        <?php endif; ?>
                     </form>
 
-                    <!-- Success Notification -->
+                    <!-- Notification -->
                     <div x-show="showNotification" 
                          x-transition:enter="transition ease-out duration-300"
                          x-transition:enter-start="opacity-0 transform translate-x-full"
@@ -167,97 +284,130 @@ $relatedProducts = $relatedStmt->fetchAll(PDO::FETCH_ASSOC);
                          x-transition:leave-start="opacity-100 transform translate-x-0"
                          x-transition:leave-end="opacity-0 transform translate-x-full"
                          :class="notificationType === 'success' ? 'bg-green-500' : 'bg-red-500'"
-                         class="fixed top-4 right-4 text-white px-6 py-3 rounded-md shadow-lg">
+                         class="fixed top-4 right-4 text-white px-6 py-3 rounded-lg shadow-lg">
                         <span x-text="notificationMessage"></span>
                     </div>
                 </div>
-
-                <script>
-                document.addEventListener('alpine:init', () => {
-                    Alpine.data('cartForm', () => ({
-                        showNotification: false,
-                        notificationType: 'success',
-                        notificationMessage: '',
-
-                        async addToCart(e) {
-                            const form = e.target;
-                            const formData = new FormData(form);
-
-                            try {
-                                const response = await fetch('/cart/add', {
-                                    method: 'POST',
-                                    body: formData
-                                });
-                                
-                                const data = await response.json();
-                                
-                                this.notificationType = data.success ? 'success' : 'error';
-                                this.notificationMessage = data.message;
-                                this.showNotification = true;
-                                
-                                setTimeout(() => {
-                                    this.showNotification = false;
-                                }, 2000);
-
-                                if (data.success) {
-                                    // Update cart count in header
-                                    const cartCountEl = document.querySelector('.cart-count');
-                                    if (cartCountEl) {
-                                        const countResponse = await fetch('/cart/count');
-                                        const count = await countResponse.text();
-                                        cartCountEl.textContent = count;
-                                    }
-                                }
-                            } catch (error) {
-                                console.error('Error adding to cart:', error);
-                                this.notificationType = 'error';
-                                this.notificationMessage = 'Error adding to cart';
-                                this.showNotification = true;
-                                setTimeout(() => {
-                                    this.showNotification = false;
-                                }, 2000);
-                            }
-                        }
-                    }));
-                });
-                </script>
-            <?php else: ?>
-                <button disabled 
-                        class="w-full bg-gray-300 text-gray-500 px-6 py-3 rounded-md cursor-not-allowed">
-                    Out of Stock
-                </button>
-            <?php endif; ?>
+            </div>
         </div>
-    </div>
 
-    <!-- Related Products -->
-    <?php if ($relatedProducts): ?>
-    <div class="mt-16">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Related Products</h2>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <?php foreach ($relatedProducts as $related): ?>
-                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <img src="<?= getImageUrl($related['image_url']) ?>" 
-                         alt="<?= htmlspecialchars($related['name']) ?>"
-                         class="w-full h-64 object-cover">
-                    <div class="p-4">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                            <?= htmlspecialchars($related['name']) ?>
-                        </h3>
-                        <p class="text-gray-600 mb-2">
-                            Rp <?= number_format($related['price'], 0, ',', '.') ?>
-                        </p>
-                        <a href="/products/<?= htmlspecialchars($related['slug']) ?>" 
-                           class="block text-center bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
-                            View Details
+        <!-- Related Products Section -->
+        <?php if ($relatedProducts): ?>
+        <div class="mt-16">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold text-gray-900">Related Products</h2>
+                <div class="flex gap-2">
+                    <button class="w-10 h-10 rounded-full border flex items-center justify-center hover:bg-gray-50">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <button class="w-10 h-10 rounded-full border flex items-center justify-center hover:bg-gray-50">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                <?php foreach ($relatedProducts as $related): ?>
+                <div class="group relative">
+                    <div class="relative aspect-[3/4] mb-4 bg-gray-100 rounded-lg overflow-hidden">
+                        <a href="/products/<?= htmlspecialchars($related['slug']) ?>">
+                            <img src="<?= getImageUrl($related['image_url']) ?>" 
+                                 alt="<?= htmlspecialchars($related['name']) ?>"
+                                 class="w-full h-full object-cover group-hover:opacity-75 transition-opacity">
                         </a>
                     </div>
+                    
+                    <div class="flex flex-col">
+                        <h3 class="font-medium mb-1">
+                            <a href="/products/<?= htmlspecialchars($related['slug']) ?>">
+                                <?= htmlspecialchars($related['name']) ?>
+                            </a>
+                        </h3>
+                        
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold">
+                                Rp <?= number_format($related['price'], 0, ',', '.') ?>
+                            </span>
+                        </div>
+
+                        <?php if ($related['stock'] > 0): ?>
+                        <button onclick="addToCart(<?= $related['id'] ?>)"
+                                class="mt-4 w-full bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-800 transition duration-150">
+                            Add to Cart
+                        </button>
+                        <?php else: ?>
+                        <button disabled 
+                                class="mt-4 w-full bg-gray-200 text-gray-500 px-4 py-2 rounded-md cursor-not-allowed">
+                            Out of Stock
+                        </button>
+                        <?php endif; ?>
+                    </div>
                 </div>
-            <?php endforeach; ?>
+                <?php endforeach; ?>
+            </div>
         </div>
+        <?php endif; ?>
     </div>
-    <?php endif; ?>
-</div>
+
+    <script>
+        // Alpine.js initialization is now handled in the x-data attribute above
+        
+        // Add to cart function for related products
+        function addToCart(productId) {
+            const formData = new FormData();
+            formData.append('product_id', productId);
+            formData.append('quantity', 1);
+
+            fetch('/cart/add', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Show notification
+                const notification = document.createElement('div');
+                notification.className = `fixed top-4 right-4 text-white px-6 py-3 rounded-lg shadow-lg ${data.success ? 'bg-green-500' : 'bg-red-500'}`;
+                notification.textContent = data.message;
+                document.body.appendChild(notification);
+
+                // Update cart count if success
+                if (data.success) {
+                    const cartCountEl = document.querySelector('.cart-count');
+                    if (cartCountEl) {
+                        fetch('/cart/count')
+                            .then(response => response.text())
+                            .then(count => {
+                                cartCountEl.textContent = count;
+                            });
+                    }
+                }
+
+                // Remove notification after 2 seconds
+                setTimeout(() => {
+                    notification.remove();
+                }, 2000);
+            })
+            .catch(error => {
+                console.error('Error adding to cart:', error);
+                // Show error notification
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 text-white px-6 py-3 rounded-lg shadow-lg bg-red-500';
+                notification.textContent = 'Error adding to cart';
+                document.body.appendChild(notification);
+                setTimeout(() => {
+                    notification.remove();
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
+
+
 <?php
 return true; // Indicate successful rendering
 ?> 

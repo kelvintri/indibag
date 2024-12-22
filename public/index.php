@@ -65,15 +65,7 @@ try {
                 require_once ROOT_PATH . '/includes/admin-layout.php';
                 exit;
                 break;
-                
-            case '/admin/products' === $path:
-                AdminAuth::requireAdmin();
-                $pageTitle = 'Manage Products';
-                $content = ROOT_PATH . '/pages/admin/products.php';
-                require_once ROOT_PATH . '/includes/admin-layout.php';
-                exit;
-                break;
-                
+
             case '/admin/orders' === $path:
                 AdminAuth::requireAdmin();
                 $pageTitle = 'Manage Orders';
@@ -82,9 +74,51 @@ try {
                 exit;
                 break;
 
-            case (preg_match('/^\/admin\/orders\/(\d+)$/', $path, $matches) ? true : false):
+            case '/admin/orders/update-status' === $path:
                 AdminAuth::requireAdmin();
-                require_once ROOT_PATH . '/pages/admin/orders/get-order.php';
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    require_once ROOT_PATH . '/pages/admin/orders/update-status.php';
+                    exit;
+                }
+                http_response_code(405);
+                echo json_encode(['error' => 'Method not allowed']);
+                exit;
+                break;
+
+            case '/admin/orders/update-shipping' === $path:
+                AdminAuth::requireAdmin();
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    require_once ROOT_PATH . '/pages/admin/orders/update-shipping.php';
+                    exit;
+                }
+                http_response_code(405);
+                echo json_encode(['error' => 'Method not allowed']);
+                exit;
+                break;
+
+            case (preg_match('/^\/admin\/orders\/(\d+)$/', $path, $matches) === 1):
+                error_log('=== Admin Order Details Route ===');
+                error_log('Matches: ' . print_r($matches, true));
+                error_log('Request Method: ' . $_SERVER['REQUEST_METHOD']);
+                
+                AdminAuth::requireAdmin();
+                if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                    error_log('Processing GET request for order details');
+                    header('Content-Type: application/json');
+                    require_once ROOT_PATH . '/pages/admin/orders/get-order.php';
+                    exit;
+                }
+                error_log('Method not allowed: ' . $_SERVER['REQUEST_METHOD']);
+                http_response_code(405);
+                echo json_encode(['error' => 'Method not allowed']);
+                exit;
+                break;
+                
+            case '/admin/products' === $path:
+                AdminAuth::requireAdmin();
+                $pageTitle = 'Manage Products';
+                $content = ROOT_PATH . '/pages/admin/products.php';
+                require_once ROOT_PATH . '/includes/admin-layout.php';
                 exit;
                 break;
                 

@@ -89,6 +89,17 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                  if (result.success) {
                      this.order = result.data;
                      this.newStatus = this.order.status;
+                     
+                     // Pre-fill shipping details from the order data
+                     this.shippingDetails = {
+                         courier_name: this.order.courier_name || '',
+                         service_type: this.order.service_type || '',
+                         tracking_number: this.order.tracking_number || '',
+                         shipping_cost: this.order.shipping_cost || '',
+                         estimated_delivery_date: this.order.estimated_delivery_date || '',
+                         notes: this.order.shipping_notes || ''
+                     };
+                     console.log('Shipping details:', this.shippingDetails); // Debug log
                  } else {
                      throw new Error(result.message || 'Failed to fetch order details');
                  }
@@ -296,18 +307,12 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </svg>
                             </button>
 
-                            <button @click="order = { id: <?= $order['id'] ?> }; 
-                                    shippingDetails = {
-                                        courier_name: '',
-                                        service_type: '',
-                                        tracking_number: '',
-                                        shipping_cost: '',
-                                        estimated_delivery_date: '',
-                                        notes: ''
-                                    };
-                                    showShippingForm = true"
+                            <button @click="viewOrder(<?= $order['id'] ?>); showShippingForm = true"
                                     class="text-purple-600 hover:text-purple-900 p-1 rounded-full hover:bg-purple-50"
-                                    title="Update Shipping Details">
+                                    title="Update Shipping Details"
+                                    <?php if (!in_array($order['status'], ['processing', 'payment_verified'])): ?>
+                                        style="display: none;"
+                                    <?php endif; ?>>
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                           d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
@@ -438,12 +443,12 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <p class="text-sm font-medium text-gray-500">Order Number</p>
-                                        <p class="mt-1" x-text="order.order_number"></p>
+                                        <p class="mt-1" x-text="order.order_number || '-'"></p>
                                     </div>
                                     <div>
                                         <p class="text-sm font-medium text-gray-500">Status</p>
                                         <p class="mt-1">
-                                            <span x-text="order.status.replace('_', ' ')" 
+                                            <span x-text="order.status ? order.status.replace('_', ' ') : ''" 
                                                   class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
                                                   :class="{
                                                       'bg-yellow-100 text-yellow-800': order.status === 'pending_payment',
@@ -466,11 +471,11 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             day: 'numeric',
                                             hour: '2-digit',
                                             minute: '2-digit'
-                                        }) : ''"></p>
+                                        }) : '-'"></p>
                                     </div>
                                     <div>
                                         <p class="text-sm font-medium text-gray-500">Total Amount</p>
-                                        <p class="mt-1" x-text="order.total_amount ? 'Rp ' + Number(order.total_amount).toLocaleString('id-ID') : ''"></p>
+                                        <p class="mt-1" x-text="order.total_amount ? 'Rp ' + Number(order.total_amount).toLocaleString('id-ID') : '-'"></p>
                                     </div>
                                 </div>
                             </div>
@@ -481,11 +486,11 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <p class="text-sm font-medium text-gray-500">Name</p>
-                                        <p class="mt-1" x-text="order.full_name || order.user_name"></p>
+                                        <p class="mt-1" x-text="order.full_name || order.user_name || '-'"></p>
                                     </div>
                                     <div>
                                         <p class="text-sm font-medium text-gray-500">Email</p>
-                                        <p class="mt-1" x-text="order.user_email"></p>
+                                        <p class="mt-1" x-text="order.user_email || '-'"></p>
                                     </div>
                                     <div>
                                         <p class="text-sm font-medium text-gray-500">Phone</p>
@@ -499,11 +504,11 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <h4 class="text-lg font-medium text-gray-900 mb-2">Shipping Address</h4>
                                 <template x-if="order.street_address">
                                     <div>
-                                        <p x-text="order.street_address"></p>
-                                        <p x-text="order.district"></p>
-                                        <p x-text="order.city + ' ' + order.postal_code"></p>
-                                        <p x-text="order.province"></p>
-                                        <p x-text="'Phone: ' + order.phone"></p>
+                                        <p x-text="order.street_address || '-'"></p>
+                                        <p x-text="order.district || '-'"></p>
+                                        <p x-text="(order.city || '-') + ' ' + (order.postal_code || '')"></p>
+                                        <p x-text="order.province || '-'"></p>
+                                        <p x-text="order.phone ? 'Phone: ' + order.phone : '-'"></p>
                                     </div>
                                 </template>
                             </div>
@@ -514,7 +519,7 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <p class="text-sm font-medium text-gray-500">Payment Method</p>
-                                        <p class="mt-1" x-text="order.payment_method ? order.payment_method.replace('_', ' ') : ''"></p>
+                                        <p class="mt-1" x-text="order.payment_method ? order.payment_method.replace('_', ' ') : '-'"></p>
                                     </div>
                                     <div>
                                         <p class="text-sm font-medium text-gray-500">Payment Amount</p>
@@ -534,20 +539,23 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <p class="text-sm font-medium text-gray-500">Verification Status</p>
                                         <p class="mt-1" x-text="order.verified_at ? 'Verified' : 'Not Verified'"></p>
                                     </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4 mt-4">
                                     <div x-show="order.verified_at">
                                         <p class="text-sm font-medium text-gray-500">Verified At</p>
-                                        <p class="mt-1" x-text="new Date(order.verified_at).toLocaleString('en-US', {
+                                        <p class="mt-1" x-text="order.verified_at ? new Date(order.verified_at).toLocaleString('en-US', {
                                             year: 'numeric',
                                             month: 'long',
                                             day: 'numeric',
                                             hour: '2-digit',
                                             minute: '2-digit'
-                                        })"></p>
+                                        }) : '-'"></p>
                                     </div>
                                     <div x-show="order.verified_by_username">
                                         <p class="text-sm font-medium text-gray-500">Verified By</p>
                                         <p class="mt-1">
-                                            <span x-text="order.verified_by_name || order.verified_by_username"></span>
+                                            <span x-text="order.verified_by_name || order.verified_by_username || '-'"></span>
                                             <span class="text-gray-500" x-show="order.verified_by_name">
                                                 (<span x-text="order.verified_by_username"></span>)
                                             </span>
@@ -567,10 +575,10 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             <a :href="order.transfer_proof_url"
                                                target="_blank"
                                                class="absolute top-2 right-2 bg-white p-2 rounded-full shadow hover:bg-gray-100">
-                                               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                         d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                               </svg>
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                </svg>
                                             </a>
                                         </div>
                                     </div>
@@ -580,10 +588,43 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <template x-if="order.notes">
                                     <div class="mt-4">
                                         <p class="text-sm font-medium text-gray-500 mb-2">Notes</p>
-                                        <p class="text-sm text-gray-600" x-text="order.notes"></p>
+                                        <p class="text-sm text-gray-600" x-text="order.notes || '-'"></p>
                                     </div>
                                 </template>
                             </div>
+
+                            <!-- Shipping Details (for shipped orders) -->
+                            <template x-if="order.status === 'shipped'">
+                                <div>
+                                    <h4 class="text-lg font-medium text-gray-900 mb-2">Shipping Details</h4>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500">Courier</p>
+                                            <p class="mt-1" x-text="order.courier_name || '-'"></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500">Service Type</p>
+                                            <p class="mt-1" x-text="order.service_type || '-'"></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500">Tracking Number</p>
+                                            <p class="mt-1" x-text="order.tracking_number || '-'"></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500">Shipping Cost</p>
+                                            <p class="mt-1" x-text="order.shipping_cost ? 'Rp ' + Number(order.shipping_cost).toLocaleString('id-ID') : '-'"></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500">Estimated Delivery</p>
+                                            <p class="mt-1" x-text="order.estimated_delivery_date || '-'"></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-500">Shipping Notes</p>
+                                            <p class="mt-1" x-text="order.shipping_notes || '-'"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
 
                             <!-- Order Items -->
                             <div>
@@ -604,26 +645,26 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <td class="px-3 py-4">
                                                     <div class="flex items-center">
                                                         <div class="h-10 w-10 flex-shrink-0">
-                                                            <img :src="item.product_image" 
+                                                            <img :src="item.product_image || '/assets/images/placeholder.jpg'" 
                                                                  :alt="item.product_name"
                                                                  class="h-10 w-10 rounded object-cover"
                                                                  @error="$event.target.src='/assets/images/placeholder.jpg'">
                                                         </div>
                                                         <div class="ml-4">
-                                                            <a :href="'/products/' + item.slug" 
+                                                            <a :href="'/products/' + (item.slug || '')" 
                                                                class="font-medium text-gray-900 hover:text-blue-600"
-                                                               x-text="item.product_name">
+                                                               x-text="item.product_name || '-'">
                                                             </a>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td class="px-3 py-4" x-text="item.sku"></td>
+                                                <td class="px-3 py-4" x-text="item.sku || '-'"></td>
                                                 <td class="px-3 py-4 text-right" 
-                                                    x-text="'Rp ' + Number(item.price).toLocaleString('id-ID')"></td>
+                                                    x-text="item.price ? 'Rp ' + Number(item.price).toLocaleString('id-ID') : '-'"></td>
                                                 <td class="px-3 py-4 text-right" 
-                                                    x-text="Number(item.quantity).toLocaleString('id-ID')"></td>
+                                                    x-text="item.quantity ? Number(item.quantity).toLocaleString('id-ID') : '-'"></td>
                                                 <td class="px-3 py-4 text-right" 
-                                                    x-text="'Rp ' + Number(item.price * item.quantity).toLocaleString('id-ID')"></td>
+                                                    x-text="(item.price && item.quantity) ? 'Rp ' + Number(item.price * item.quantity).toLocaleString('id-ID') : '-'"></td>
                                             </tr>
                                         </template>
                                     </tbody>
@@ -631,7 +672,7 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <tr>
                                             <td colspan="4" class="px-3 py-4 text-right font-medium">Total</td>
                                             <td class="px-3 py-4 text-right font-medium" 
-                                                x-text="'Rp ' + Number(order.total_amount).toLocaleString('id-ID')"></td>
+                                                x-text="order.total_amount ? 'Rp ' + Number(order.total_amount).toLocaleString('id-ID') : '-'"></td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -707,34 +748,37 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <label class="block text-sm font-medium text-gray-700">Courier Name</label>
                                 <input type="text" 
                                        x-model="shippingDetails.courier_name"
-                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                       required>
+                                       class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 cursor-not-allowed shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                       readonly>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Service Type</label>
                                 <input type="text" 
                                        x-model="shippingDetails.service_type"
-                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                       class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 cursor-not-allowed shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                       readonly>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Tracking Number</label>
                                 <input type="text" 
                                        x-model="shippingDetails.tracking_number"
-                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                       required>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Shipping Cost</label>
                                 <input type="number" 
                                        x-model="shippingDetails.shipping_cost"
                                        step="0.01"
-                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                       required>
+                                       class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 cursor-not-allowed shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                       readonly>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Estimated Delivery Date</label>
                                 <input type="date" 
                                        x-model="shippingDetails.estimated_delivery_date"
-                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                       required>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Notes</label>

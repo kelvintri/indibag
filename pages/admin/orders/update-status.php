@@ -3,80 +3,92 @@ require_once __DIR__ . '/../../../includes/AdminAuth.php';
 require_once __DIR__ . '/../../../config/database.php';
 
 AdminAuth::requireAdmin();
+
 header('Content-Type: application/json');
 
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['error' => 'Method not allowed']);
+    exit;
+}
+
+$order_id = $_POST['order_id'] ?? null;
+$status = $_POST['status'] ?? null;
+$notes = $_POST['notes'] ?? null;
+
+if (!$order_id || !$status) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Missing required fields']);
+    exit;
+}
+
+// Validate status
+$valid_statuses = [
+    'pending_payment',
+    'payment_uploaded',
+    'payment_verified',
+    'processing',
+    'shipped',
+    'delivered',
+    'cancelled',
+    'refunded'
+];
+
+if (!in_array($status, $valid_statuses)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Invalid status']);
+    exit;
+}
+
+$db = new Database();
+$conn = $db->getConnection();
+
 try {
-    if (!isset($_POST['order_id']) || !isset($_POST['status'])) {
-        throw new Exception('Missing required fields');
-    }
-
-    // Debug log
-    error_log("Received status: " . $_POST['status']);
-    
-    // Validate status value
-    $valid_statuses = [
-        'pending_payment',
-        'payment_uploaded',
-        'payment_verified',
-        'processing',
-        'shipped',
-        'delivered',
-        'cancelled',
-        'refunded'
-    ];
-    
-    if (!in_array($_POST['status'], $valid_statuses)) {
-        throw new Exception('Invalid status value: ' . $_POST['status']);
-    }
-
-    $db = new Database();
-    $conn = $db->getConnection();
-    
     $conn->beginTransaction();
-    
+
     // Update order status
-    $stmt = $conn->prepare("UPDATE orders SET status = ? WHERE id = ?");
-    $stmt->execute([$_POST['status'], $_POST['order_id']]);
+    $sql = "UPDATE orders 
+            SET status = :status,
+                updated_at = NOW()
+            WHERE id = :order_id";
     
-    // Add status history
-    $stmt = $conn->prepare("
-        INSERT INTO order_status_history (
-            order_id, status, notes, changed_by, created_at
-        ) VALUES (?, ?, ?, ?, NOW())
-    ");
-    
-    $stmt->execute([
-        $_POST['order_id'],
-        $_POST['status'],
-        $_POST['notes'] ?? null,
-        $_SESSION['user_id']
-    ]);
-    
-    // If status is payment_verified, update payment_details
-    if ($_POST['status'] === 'payment_verified') {
-        $stmt = $conn->prepare("
-            UPDATE payment_details 
-            SET verified_by = ?, 
-                verified_at = NOW() 
-            WHERE order_id = ?
-        ");
-        $stmt->execute([$_SESSION['user_id'], $_POST['order_id']]);
+    $stmt = $conn->prepare($sql);
+    $stmt->bindParam(':order_id', $order_id);
+    $stmt->bindParam(':status', $status);
+    $stmt->execute();
+
+    // If status is payment_verified, update payment details
+    if ($status === 'payment_verified') {
+        $sql = "UPDATE payment_details 
+                SET verified_at = NOW(),
+                    verified_by = :verified_by,
+                    notes = CASE 
+                        WHEN :notes IS NOT NULL AND :notes != '' 
+                        THEN :notes 
+                        ELSE notes 
+                    END
+                WHERE order_id = :order_id";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->bindParam(':order_id', $order_id);
+        $stmt->bindParam(':verified_by', $_SESSION['user_id']);
+        $stmt->bindParam(':notes', $notes);
+        $stmt->execute();
     }
-    
+
     $conn->commit();
-    
+
     echo json_encode([
         'success' => true,
         'message' => 'Order status updated successfully'
     ]);
 
 } catch (Exception $e) {
-    if (isset($conn)) {
-        $conn->rollBack();
-    }
-    http_response_code(400);
+    $conn->rollBack();
+    error_log('Error updating order status: ' . $e->getMessage());
+    http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage()
+        'message' => 'Failed to update order status'
     ]);
 } 

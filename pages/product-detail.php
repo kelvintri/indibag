@@ -284,7 +284,7 @@ $relatedProducts = $relatedStmt->fetchAll(PDO::FETCH_ASSOC);
                          x-transition:leave-start="opacity-100 transform translate-x-0"
                          x-transition:leave-end="opacity-0 transform translate-x-full"
                          :class="notificationType === 'success' ? 'bg-green-500' : 'bg-red-500'"
-                         class="fixed top-4 right-4 text-white px-6 py-3 rounded-lg shadow-lg">
+                         class="fixed bottom-4 right-4 text-white px-6 py-3 rounded-lg shadow-lg">
                         <span x-text="notificationMessage"></span>
                     </div>
                 </div>
@@ -370,7 +370,7 @@ $relatedProducts = $relatedStmt->fetchAll(PDO::FETCH_ASSOC);
             .then(data => {
                 // Show notification
                 const notification = document.createElement('div');
-                notification.className = `fixed top-4 right-4 text-white px-6 py-3 rounded-lg shadow-lg ${data.success ? 'bg-green-500' : 'bg-red-500'}`;
+                notification.className = `fixed bottom-4 right-4 text-white px-6 py-3 rounded-lg shadow-lg ${data.success ? 'bg-green-500' : 'bg-red-500'}`;
                 notification.textContent = data.message;
                 document.body.appendChild(notification);
 

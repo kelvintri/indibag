@@ -78,7 +78,7 @@ if (!empty($condition)) {
 }
 
 if ($search) {
-    $query .= " AND (p.name LIKE :search OR p.description LIKE :search)";
+    $query .= " AND (p.name LIKE :search OR p.description LIKE :search OR b.name LIKE :search)";
     $params[':search'] = "%$search%";
 }
 
@@ -95,7 +95,11 @@ switch ($sort) {
 }
 
 // Get total count for pagination
-$countQuery = "SELECT COUNT(DISTINCT p.id) as total FROM products p WHERE p.is_active = 1";
+$countQuery = "SELECT COUNT(DISTINCT p.id) as total 
+               FROM products p 
+               LEFT JOIN brands b ON p.brand_id = b.id
+               LEFT JOIN categories c ON p.category_id = c.id
+               WHERE p.is_active = 1";
 
 if (!empty($category_id)) {
     $countQuery .= " AND p.category_id IN (" . implode(',', $placeholders) . ")";
@@ -114,7 +118,7 @@ if (!empty($condition)) {
 }
 
 if ($search) {
-    $countQuery .= " AND (p.name LIKE :search OR p.description LIKE :search)";
+    $countQuery .= " AND (p.name LIKE :search OR p.description LIKE :search OR b.name LIKE :search)";
 }
 
 $countStmt = $conn->prepare($countQuery);
@@ -166,7 +170,37 @@ $brands = $brandsStmt->fetchAll(PDO::FETCH_ASSOC);
     </style>
     <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
 </head>
-<body class="bg-white">
+<body class="bg-white" x-data="{ 
+    showNotification: false,
+    notificationType: 'success',
+    notificationMessage: '',
+    
+    showNotificationMessage(type, message) {
+        this.notificationType = type;
+        this.notificationMessage = message;
+        this.showNotification = true;
+        setTimeout(() => {
+            this.showNotification = false;
+        }, 2000);
+    }
+}">
+    <!-- Notification -->
+    <div x-show="showNotification" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-x-full"
+         x-transition:enter-end="opacity-100 transform translate-x-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform translate-x-0"
+         x-transition:leave-end="opacity-0 transform translate-x-full"
+         class="fixed bottom-4 right-4 z-50"
+         @click="showNotification = false">
+        <div :class="{
+            'bg-green-500': notificationType === 'success',
+            'bg-red-500': notificationType === 'error'
+        }" class="text-white px-6 py-3 rounded-lg shadow-lg">
+            <span x-text="notificationMessage"></span>
+        </div>
+    </div>
 
     <!-- Breadcrumb -->
     <div class="container mx-auto px-4 py-4">
@@ -376,7 +410,7 @@ $brands = $brandsStmt->fetchAll(PDO::FETCH_ASSOC);
                 <!-- Products Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <?php foreach ($products as $product): ?>
-                    <div class="group relative">
+                    <div class="group relative flex flex-col h-full">
                         <div class="relative aspect-[3/4] mb-4 bg-gray-100">
                             <a href="/products/<?= htmlspecialchars($product['slug']) ?>" class="block w-full h-full">
                                 <img src="<?= getImageUrl($product['primary_image']) ?>"
@@ -388,16 +422,18 @@ $brands = $brandsStmt->fetchAll(PDO::FETCH_ASSOC);
                                      onerror="this.src='<?= asset('images/placeholder.jpg') ?>'">
                             </a>
                         </div>
-                        <h3 class="font-medium mb-1">
-                            <a href="/products/<?= htmlspecialchars($product['slug']) ?>">
-                                <?= htmlspecialchars($product['name']) ?>
-                            </a>
-                        </h3>
-                        <p class="text-sm text-gray-500 mb-2"><?= htmlspecialchars($product['brand_name']) ?></p>
-                        <div class="flex items-center gap-2">
-                            <span class="font-semibold">
-                                IDR <?= number_format($product['price'], 0, ',', '.') ?>
-                            </span>
+                        <div class="flex-grow">
+                            <h3 class="font-medium mb-1">
+                                <a href="/products/<?= htmlspecialchars($product['slug']) ?>">
+                                    <?= htmlspecialchars($product['name']) ?>
+                                </a>
+                            </h3>
+                            <p class="text-sm text-gray-500 mb-2"><?= htmlspecialchars($product['brand_name']) ?></p>
+                            <div class="flex items-center gap-2">
+                                <span class="font-semibold">
+                                    IDR <?= number_format($product['price'], 0, ',', '.') ?>
+                                </span>
+                            </div>
                         </div>
                         <?php if ($product['stock'] > 0): ?>
                         <button onclick="addToCart(<?= $product['id'] ?>)"
@@ -536,6 +572,38 @@ $brands = $brandsStmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     // Keep the existing Alpine.js and cart functionality
+    async function addToCart(productId) {
+        const formData = new FormData();
+        formData.append('product_id', productId);
+        formData.append('quantity', 1);
+
+        try {
+            const response = await fetch('/cart/add', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            // Show notification using Alpine.js
+            const alpine = document.querySelector('body').__x.$data;
+            alpine.showNotificationMessage(data.success ? 'success' : 'error', data.message);
+
+            // Update cart count if success
+            if (data.success) {
+                const cartCountEl = document.querySelector('.cart-count');
+                if (cartCountEl) {
+                    const countResponse = await fetch('/cart/count');
+                    const count = await countResponse.text();
+                    cartCountEl.textContent = count;
+                }
+            }
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            const alpine = document.querySelector('body').__x.$data;
+            alpine.showNotificationMessage('error', 'Error adding to cart');
+        }
+    }
     </script>
 </body>
 </html>

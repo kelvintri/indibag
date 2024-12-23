@@ -9,17 +9,32 @@
                       FROM products p 
                       LEFT JOIN product_galleries pg ON p.id = pg.product_id 
                       GROUP BY p.id
-          LIMIT 3";
+                      ORDER BY p.id
+                      LIMIT 8";
             
             $stmt = $conn->prepare($query);
             $stmt->execute();
-$featuredProducts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $featuredProducts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get brands
-$brandQuery = "SELECT * FROM brands ORDER BY name LIMIT 8";
+$brandQuery = "SELECT * FROM brands ORDER BY name LIMIT 24";
 $brandStmt = $conn->prepare($brandQuery);
 $brandStmt->execute();
 $brands = $brandStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get all categories with product count
+$categoryQuery = "SELECT c.*, COUNT(p.id) as product_count,
+           MAX(CASE WHEN pg.is_primary = 1 THEN pg.image_url END) as primary_image
+           FROM categories c 
+           LEFT JOIN products p ON c.id = p.category_id AND p.is_active = 1
+           LEFT JOIN product_galleries pg ON p.id = pg.product_id
+           GROUP BY c.id
+           ORDER BY c.name
+           LIMIT 8";
+
+$categoryStmt = $conn->prepare($categoryQuery);
+$categoryStmt->execute();
+$categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!-- Top Banner -->
@@ -65,20 +80,42 @@ $brands = $brandStmt->fetchAll(PDO::FETCH_ASSOC);
 
     <!-- Brands -->
     <div class="mb-12">
-        <h2 class="text-xl font-semibold mb-6">Brands</h2>
-        <div class="grid grid-cols-4 md:grid-cols-8 gap-8">
-            <?php foreach ($brands as $brand): ?>
-                <div class="flex items-center justify-center">
-                    <?php
-                    $brandName = strtolower($brand['name']);
-                    $logoUrl = "/assets/images/brands/" . $brand['slug'] . ".png";
-                    ?>
-                    <img src="<?= $logoUrl ?>" 
-                         alt="<?= htmlspecialchars($brand['name']) ?>"
-                         class="h-8 object-contain grayscale hover:grayscale-0 transition"
-                         onerror="this.src='/assets/images/brands/placeholder.png'">
-                </div>
-            <?php endforeach; ?>
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold">Brands</h2>
+            <div class="flex gap-2">
+                <button id="brands-prev" onclick="moveCarousel('brands', -1)" class="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-50">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <button id="brands-next" onclick="moveCarousel('brands', 1)" class="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-50">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="relative overflow-hidden">
+            <div id="brands-carousel" class="flex transition-transform duration-800 ease-in-out">
+                <?php foreach (array_chunk($brands, 8) as $brandGroup): ?>
+                    <div class="min-w-full">
+                        <div class="grid grid-cols-8 gap-8">
+                            <?php foreach ($brandGroup as $brand): ?>
+                                <div class="flex items-center justify-center">
+                                    <?php
+                                    $brandName = strtolower($brand['name']);
+                                    $logoUrl = "/assets/images/brands/" . $brand['slug'] . ".png";
+                                    ?>
+                                    <img src="<?= $logoUrl ?>" 
+                                         alt="<?= htmlspecialchars($brand['name']) ?>"
+                                         class="h-8 object-contain grayscale hover:grayscale-0 transition"
+                                         onerror="this.src='/assets/images/brands/placeholder.png'">
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
         </div>
     </div>
 
@@ -126,42 +163,47 @@ $brands = $brandStmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 
-    <!-- Curated Picks -->
+    <!-- Categories -->
     <div class="mb-12">
-        <h2 class="text-xl font-semibold mb-6">Curated picks</h2>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <a href="/products?category=best-seller" class="relative aspect-square rounded-lg overflow-hidden group">
-                <img src="/assets/images/categories/best-seller.jpg" alt="Best Seller" class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-                    <button class="bg-white text-black px-6 py-2 rounded-full opacity-0 group-hover:opacity-100 transition">
-                        Best Seller
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold">Categories</h2>
+            <div class="flex items-center gap-4">
+                <div class="flex gap-2">
+                    <button id="categories-prev" onclick="moveCarousel('categories', -1)" class="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-50 transition-opacity">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <button id="categories-next" onclick="moveCarousel('categories', 1)" class="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-50 transition-opacity">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
                     </button>
                 </div>
-            </a>
-            <a href="/products?category=men" class="relative aspect-square rounded-lg overflow-hidden group">
-                <img src="/assets/images/categories/men.jpg" alt="Shop Men" class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-                    <button class="bg-white text-black px-6 py-2 rounded-full opacity-0 group-hover:opacity-100 transition">
-                        Shop Men
-                    </button>
+                <a href="/categories" class="text-sm text-gray-500 hover:text-black">View all →</a>
+            </div>
+        </div>
+        <div class="relative overflow-hidden">
+            <div id="categories-carousel" class="flex transition-transform duration-300 ease-in-out">
+                <?php foreach ($categories as $category): ?>
+                <div class="w-full md:w-1/4 flex-shrink-0 px-3">
+                    <a href="/products?category[]=<?= $category['id'] ?>" class="relative aspect-square rounded-lg overflow-hidden group block">
+                        <img src="<?= getImageUrl($category['primary_image']) ?>" 
+                             alt="<?= htmlspecialchars($category['name']) ?>" 
+                             class="w-full h-full object-cover"
+                             onerror="this.src='<?= asset('images/placeholder.jpg') ?>'">
+                        <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                            <div class="text-center">
+                                <button class="bg-white text-black px-6 py-2 rounded-full opacity-0 group-hover:opacity-100 transition">
+                                    <?= htmlspecialchars($category['name']) ?>
+                                </button>
+                                <p class="text-white text-sm mt-2"><?= $category['product_count'] ?> Products</p>
+                            </div>
+                        </div>
+                    </a>
                 </div>
-            </a>
-            <a href="/products?category=women" class="relative aspect-square rounded-lg overflow-hidden group">
-                <img src="/assets/images/categories/women.jpg" alt="Shop Women" class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-                    <button class="bg-white text-black px-6 py-2 rounded-full opacity-0 group-hover:opacity-100 transition">
-                        Shop Women
-                    </button>
-                </div>
-            </a>
-            <a href="/products?category=casual" class="relative aspect-square rounded-lg overflow-hidden group">
-                <img src="/assets/images/categories/casual.jpg" alt="Shop Casual" class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-                    <button class="bg-white text-black px-6 py-2 rounded-full opacity-0 group-hover:opacity-100 transition">
-                        Shop Casual
-                    </button>
-                </div>
-            </a>
+                <?php endforeach; ?>
+            </div>
         </div>
     </div>
 
@@ -170,44 +212,48 @@ $brands = $brandStmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-semibold">Featured products</h2>
             <div class="flex gap-2">
-                <button class="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center">
+                <button id="featured-prev" onclick="moveCarousel('featured', -1)" class="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-50 transition-opacity">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
                 </button>
-                <button class="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center">
+                <button id="featured-next" onclick="moveCarousel('featured', 1)" class="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-50 transition-opacity">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
                 </button>
             </div>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <?php foreach ($featuredProducts as $product): ?>
-                <div class="bg-white rounded-lg overflow-hidden group">
-                    <div class="relative aspect-[3/4]">
-                        <img src="<?= getImageUrl($product['primary_image']) ?>" 
-                             alt="<?= htmlspecialchars($product['name']) ?>"
-                             class="w-full h-full object-cover">
-                        <?php if ($product['hover_image']): ?>
-                            <img src="<?= getImageUrl($product['hover_image']) ?>" 
+        <div class="relative overflow-hidden">
+            <div id="featured-carousel" class="flex transition-transform duration-300 ease-in-out">
+                <?php foreach ($featuredProducts as $product): ?>
+                <div class="w-full md:w-1/3 flex-shrink-0 px-3">
+                    <div class="bg-white rounded-lg overflow-hidden group">
+                        <div class="relative aspect-[3/4]">
+                            <img src="<?= getImageUrl($product['primary_image']) ?>" 
                                  alt="<?= htmlspecialchars($product['name']) ?>"
-                                 class="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition">
-                        <?php endif; ?>
-                        <div class="absolute bottom-4 right-4">
-                            <button class="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                </svg>
-                            </button>
+                                 class="w-full h-full object-cover">
+                            <?php if ($product['hover_image']): ?>
+                                <img src="<?= getImageUrl($product['hover_image']) ?>" 
+                                     alt="<?= htmlspecialchars($product['name']) ?>"
+                                     class="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition">
+                            <?php endif; ?>
+                            <div class="absolute bottom-4 right-4">
+                                <button class="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-medium"><?= htmlspecialchars($product['name']) ?></h3>
+                            <p class="text-gray-500">Rp <?= number_format($product['price'], 0, ',', '.') ?></p>
                         </div>
                     </div>
-                    <div class="p-4">
-                        <h3 class="font-medium"><?= htmlspecialchars($product['name']) ?></h3>
-                        <p class="text-gray-500">Rp <?= number_format($product['price'], 0, ',', '.') ?></p>
-                    </div>
                 </div>
-            <?php endforeach; ?>
+                <?php endforeach; ?>
+            </div>
         </div>
     </div>
 
@@ -247,3 +293,101 @@ $brands = $brandStmt->fetchAll(PDO::FETCH_ASSOC);
         </form>
     </div>
 </div> 
+
+<script>
+const carouselState = {
+    categories: { currentIndex: 0, itemCount: <?= count($categories) ?>, itemsPerView: 4, scrollAmount: 1, infinite: true },
+    featured: { currentIndex: 0, itemCount: <?= count($featuredProducts) ?>, itemsPerView: 3, scrollAmount: 1, infinite: true },
+    brands: { currentIndex: 0, itemCount: <?= ceil(count($brands) / 8) ?>, itemsPerView: 1, scrollAmount: 1, infinite: true }
+};
+
+function moveCarousel(type, direction) {
+    const state = carouselState[type];
+    const carousel = document.getElementById(`${type}-carousel`);
+    
+    if (!carousel) return;
+
+    // Calculate new index
+    let newIndex = state.currentIndex + direction;
+    
+    // For infinite scroll
+    if (newIndex < 0) {
+        newIndex = state.itemCount - state.itemsPerView;
+    } else if (newIndex >= state.itemCount - state.itemsPerView + 1) {
+        newIndex = 0;
+    }
+    
+    // Update state
+    state.currentIndex = newIndex;
+    
+    // Calculate translation based on carousel type
+    let translateX;
+    if (type === 'brands') {
+        translateX = -(newIndex * 100);
+    } else {
+        translateX = -(newIndex * (100 / state.itemsPerView));
+    }
+    
+    // Apply smooth transition
+    carousel.style.transition = 'transform 0.8s ease-in-out';
+    carousel.style.transform = `translateX(${translateX}%)`;
+}
+
+// Handle responsive itemsPerView changes
+function updateItemsPerView() {
+    const width = window.innerWidth;
+    if (width < 768) { // mobile
+        carouselState.categories.itemsPerView = 1;
+        carouselState.featured.itemsPerView = 1;
+        carouselState.brands.itemsPerView = 1;
+    } else { // desktop
+        carouselState.categories.itemsPerView = 4;
+        carouselState.featured.itemsPerView = 3;
+        carouselState.brands.itemsPerView = 1;
+    }
+    
+    // Reset positions and update
+    Object.keys(carouselState).forEach(type => {
+        const state = carouselState[type];
+        state.currentIndex = 0;
+        // Update maxIndex based on itemsPerView
+        state.maxIndex = Math.max(0, state.itemCount - state.itemsPerView);
+        
+        const carousel = document.getElementById(`${type}-carousel`);
+        if (carousel) {
+            carousel.style.transition = 'none';
+            carousel.style.transform = 'translateX(0)';
+            carousel.offsetHeight; // Force reflow
+            carousel.style.transition = 'transform 0.8s ease-in-out';
+        }
+    });
+}
+
+// Optional: Auto-play functionality with 10-second interval
+function startAutoPlay() {
+    setInterval(() => {
+        ['categories', 'featured', 'brands'].forEach(type => {
+            const state = carouselState[type];
+            if (state.currentIndex >= state.maxIndex) {
+                state.currentIndex = -1; // Will become 0 after moveCarousel adds 1
+            }
+            moveCarousel(type, 1);
+        });
+    }, 10000);
+}
+
+// Initialize carousel states with maxIndex
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize maxIndex for each carousel
+    Object.keys(carouselState).forEach(type => {
+        const state = carouselState[type];
+        state.maxIndex = Math.max(0, state.itemCount - state.itemsPerView);
+    });
+    
+    updateItemsPerView();
+    startAutoPlay();
+});
+
+// Update on resize
+window.addEventListener('resize', updateItemsPerView);
+</script>

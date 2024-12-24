@@ -21,6 +21,7 @@ storage/images/
 storage/uploads/
 images/
 uploads/
+config/
 
 # Thumbnails
 **/thumbs/

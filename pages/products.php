@@ -413,13 +413,13 @@ $brands = $brandsStmt->fetchAll(PDO::FETCH_ASSOC);
                     <div class="group relative flex flex-col h-full">
                         <div class="relative aspect-[3/4] mb-4 bg-gray-100">
                             <a href="/products/<?= htmlspecialchars($product['slug']) ?>" class="block w-full h-full">
-                                <img src="<?= getImageUrl($product['primary_image']) ?>"
-                                     data-hover-src="<?= getImageUrl($product['hover_image']) ?>"
+                                <img src="<?= str_replace(['.jpg', '.jpeg'], '.webp', getImageUrl($product['primary_image'])) ?>"
+                                     data-hover-src="<?= str_replace(['.jpg', '.jpeg'], '.webp', getImageUrl($product['hover_image'])) ?>"
                                      alt="<?= htmlspecialchars($product['name']) ?>"
                                      class="w-full h-full object-cover transition-opacity duration-300"
                                      onmouseover="this.src=this.dataset.hoverSrc"
-                                     onmouseout="this.src='<?= getImageUrl($product['primary_image']) ?>'"
-                                     onerror="this.src='<?= asset('images/placeholder.jpg') ?>'">
+                                     onmouseout="this.src='<?= str_replace(['.jpg', '.jpeg'], '.webp', getImageUrl($product['primary_image'])) ?>'"
+                                     onerror="this.src='<?= str_replace(['.jpg', '.jpeg'], '.webp', asset('images/placeholder.jpg')) ?>'">
                             </a>
                         </div>
                         <div class="flex-grow">

@@ -46,36 +46,47 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
     <!-- Hero Slider -->
     <div class="relative mb-12">
         <div class="rounded-lg overflow-hidden">
-            <div class="relative aspect-[16/9]">
-                <img src="/assets/images/hero.jpg" alt="Summer Collection" class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                    <div class="text-center text-white">
-                        <h1 class="text-4xl md:text-6xl font-bold mb-4">Level up your style with our<br>summer collections</h1>
-                        <a href="/products" class="inline-block bg-white text-black px-8 py-3 rounded-full hover:bg-gray-100 transition">
-                            Shop now
-                        </a>
+            <div id="hero-carousel" class="relative" style="aspect-ratio: 1740/608;">
+                <div class="absolute inset-0 w-full h-full transition-opacity duration-500">
+                    <img src="/assets/images/hero/hero1.jpg" alt="Summer Collection" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+                        <div class="text-center text-white">
+                            <h1 class="text-4xl md:text-6xl font-bold mb-4">Level up your style with our<br>summer collections</h1>
+                            <a href="/products" class="inline-block bg-white text-black px-8 py-3 rounded-full hover:bg-gray-100 transition">
+                                Shop now
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="absolute inset-0 w-full h-full transition-opacity duration-500 opacity-0">
+                    <img src="/assets/images/hero/hero2.jpg" alt="Summer Collection" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+                        <div class="text-center text-white">
+                            <h1 class="text-4xl md:text-6xl font-bold mb-4">Discover our latest<br>fashion trends</h1>
+                            <a href="/products" class="inline-block bg-white text-black px-8 py-3 rounded-full hover:bg-gray-100 transition">
+                                Shop now
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
+            <!-- Slider Navigation -->
+            <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                <button onclick="setSlide(0)" class="w-2 h-2 rounded-full bg-white" id="slide-dot-0"></button>
+                <button onclick="setSlide(1)" class="w-2 h-2 rounded-full bg-white bg-opacity-50" id="slide-dot-1"></button>
+            </div>
+            <!-- Slider Arrows -->
+            <button onclick="prevSlide()" class="absolute left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-white bg-opacity-50 rounded-full flex items-center justify-center hover:bg-opacity-75">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+            <button onclick="nextSlide()" class="absolute right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-white bg-opacity-50 rounded-full flex items-center justify-center hover:bg-opacity-75">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
         </div>
-        <!-- Slider Navigation -->
-        <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-            <button class="w-2 h-2 rounded-full bg-white bg-opacity-50"></button>
-            <button class="w-2 h-2 rounded-full bg-white"></button>
-            <button class="w-2 h-2 rounded-full bg-white bg-opacity-50"></button>
-            <button class="w-2 h-2 rounded-full bg-white bg-opacity-50"></button>
-        </div>
-        <!-- Slider Arrows -->
-        <button class="absolute left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-white bg-opacity-50 rounded-full flex items-center justify-center hover:bg-opacity-75">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-        </button>
-        <button class="absolute right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-white bg-opacity-50 rounded-full flex items-center justify-center hover:bg-opacity-75">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-        </button>
     </div>
 
     <!-- Brands -->
@@ -390,4 +401,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Update on resize
 window.addEventListener('resize', updateItemsPerView);
+
+// Hero Slider functionality
+let currentSlide = 0;
+const totalSlides = 2;
+const slideInterval = 5000; // Change slide every 5 seconds
+
+function showSlide(index) {
+    const slides = document.querySelectorAll('#hero-carousel > div');
+    const dots = document.querySelectorAll('[id^="slide-dot-"]');
+    
+    slides.forEach((slide, i) => {
+        slide.style.opacity = i === index ? '1' : '0';
+        dots[i].classList.toggle('bg-opacity-50', i !== index);
+    });
+}
+
+function nextSlide() {
+    currentSlide = (currentSlide + 1) % totalSlides;
+    showSlide(currentSlide);
+}
+
+function prevSlide() {
+    currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+    showSlide(currentSlide);
+}
+
+function setSlide(index) {
+    currentSlide = index;
+    showSlide(currentSlide);
+}
+
+// Start the automatic slideshow
+let slideTimer = setInterval(nextSlide, slideInterval);
+
+// Reset timer when manually changing slides
+document.querySelectorAll('[id^="slide-dot-"], button').forEach(button => {
+    button.addEventListener('click', () => {
+        clearInterval(slideTimer);
+        slideTimer = setInterval(nextSlide, slideInterval);
+    });
+});
+
+// Initialize the first slide
+document.addEventListener('DOMContentLoaded', () => {
+    showSlide(0);
+});
 </script>

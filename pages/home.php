@@ -119,10 +119,10 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
                         $brandName = strtolower($brand['name']);
                         $logoUrl = "/assets/images/brands/" . $brand['slug'] . ".png";
                         ?>
-                        <img src="<?= $logoUrl ?>" 
+                        <img src="<?= str_replace(['.png', '.jpg', '.jpeg'], '.webp', $logoUrl) ?>" 
                              alt="<?= htmlspecialchars($brand['name']) ?>"
                              class="h-8 object-contain grayscale hover:grayscale-0 transition"
-                             onerror="this.src='/assets/images/brands/placeholder.png'">
+                             onerror="this.src='<?= str_replace(['.png', '.jpg', '.jpeg'], '.webp', '/assets/images/brands/placeholder.png') ?>'">
                     </div>
                 </div>
                 <?php endforeach; ?>

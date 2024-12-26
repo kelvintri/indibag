@@ -46,24 +46,28 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
     <!-- Hero Slider -->
     <div class="relative mb-12">
         <div class="rounded-lg overflow-hidden">
-            <div id="hero-carousel" class="relative" style="aspect-ratio: 1740/608;">
+            <div id="hero-carousel" class="relative [aspect-ratio:1/1.2] md:[aspect-ratio:1740/608]">
                 <div class="absolute inset-0 w-full h-full transition-opacity duration-500">
-                    <img src="/assets/images/hero/hero1.webp" alt="Summer Collection" class="w-full h-full object-cover">
+                    <img src="<?= str_replace(['.jpg', '.jpeg'], '.webp', '/assets/images/hero/hero1.jpg') ?>" 
+                         alt="Summer Collection" 
+                         class="w-full h-full object-cover object-top">
                     <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                        <div class="text-center text-white">
-                            <h1 class="text-4xl md:text-6xl font-bold mb-4">Level up your style with our<br>summer collections</h1>
-                            <a href="/products" class="inline-block bg-white text-black px-8 py-3 rounded-full hover:bg-gray-100 transition">
+                        <div class="text-center text-white px-4">
+                            <h1 class="text-3xl md:text-6xl font-bold mb-4">Level up your style with our<br class="hidden md:block">summer collections</h1>
+                            <a href="/products" class="inline-block bg-white text-black px-6 md:px-8 py-2 md:py-3 rounded-full hover:bg-gray-100 transition">
                                 Shop now
                             </a>
                         </div>
                     </div>
                 </div>
                 <div class="absolute inset-0 w-full h-full transition-opacity duration-500 opacity-0">
-                    <img src="/assets/images/hero/hero2.webp" alt="Summer Collection" class="w-full h-full object-cover">
+                    <img src="<?= str_replace(['.jpg', '.jpeg'], '.webp', '/assets/images/hero/hero2.jpg') ?>" 
+                         alt="Summer Collection" 
+                         class="w-full h-full object-cover object-top">
                     <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                        <div class="text-center text-white">
-                            <h1 class="text-4xl md:text-6xl font-bold mb-4">Discover our latest<br>fashion trends</h1>
-                            <a href="/products" class="inline-block bg-white text-black px-8 py-3 rounded-full hover:bg-gray-100 transition">
+                        <div class="text-center text-white px-4">
+                            <h1 class="text-3xl md:text-6xl font-bold mb-4">Discover our latest<br class="hidden md:block">fashion trends</h1>
+                            <a href="/products" class="inline-block bg-white text-black px-6 md:px-8 py-2 md:py-3 rounded-full hover:bg-gray-100 transition">
                                 Shop now
                             </a>
                         </div>
@@ -107,24 +111,20 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
         <div class="relative overflow-hidden">
-            <div id="brands-carousel" class="flex transition-transform duration-800 ease-in-out">
-                <?php foreach (array_chunk($brands, 8) as $brandGroup): ?>
-                    <div class="min-w-full">
-                        <div class="grid grid-cols-8 gap-8">
-                            <?php foreach ($brandGroup as $brand): ?>
-                                <div class="flex items-center justify-center">
-                                    <?php
-                                    $brandName = strtolower($brand['name']);
-                                    $logoUrl = "/assets/images/brands/" . $brand['slug'] . ".png";
-                                    ?>
-                                    <img src="<?= $logoUrl ?>" 
-                                         alt="<?= htmlspecialchars($brand['name']) ?>"
-                                         class="h-8 object-contain grayscale hover:grayscale-0 transition"
-                                         onerror="this.src='/assets/images/brands/placeholder.png'">
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
+            <div id="brands-carousel" class="flex transition-transform duration-300 ease-in-out">
+                <?php foreach ($brands as $brand): ?>
+                <div class="w-full md:w-1/4 lg:w-[12.5%] flex-shrink-0 px-3">
+                    <div class="flex items-center justify-center h-12">
+                        <?php
+                        $brandName = strtolower($brand['name']);
+                        $logoUrl = "/assets/images/brands/" . $brand['slug'] . ".png";
+                        ?>
+                        <img src="<?= $logoUrl ?>" 
+                             alt="<?= htmlspecialchars($brand['name']) ?>"
+                             class="h-8 object-contain grayscale hover:grayscale-0 transition"
+                             onerror="this.src='/assets/images/brands/placeholder.png'">
                     </div>
+                </div>
                 <?php endforeach; ?>
             </div>
         </div>
@@ -199,10 +199,10 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php foreach ($categories as $category): ?>
                 <div class="w-full md:w-1/4 flex-shrink-0 px-3">
                     <a href="/products?category[]=<?= $category['id'] ?>" class="relative aspect-square rounded-lg overflow-hidden group block">
-                        <img src="<?= getImageUrl($category['primary_image']) ?>" 
+                        <img src="<?= str_replace(['.jpg', '.jpeg'], '.webp', getImageUrl($category['primary_image'])) ?>" 
                              alt="<?= htmlspecialchars($category['name']) ?>" 
                              class="w-full h-full object-cover"
-                             onerror="this.src='<?= asset('images/placeholder.jpg') ?>'">
+                             onerror="this.src='<?= str_replace(['.jpg', '.jpeg'], '.webp', asset('images/placeholder.jpg')) ?>'">
                         <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
                             <div class="text-center">
                                 <button class="bg-white text-black px-6 py-2 rounded-full opacity-0 group-hover:opacity-100 transition">
@@ -241,14 +241,13 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="w-full md:w-1/3 flex-shrink-0 px-3">
                     <div class="bg-white rounded-lg overflow-hidden group">
                         <div class="relative aspect-[3/4]">
-                            <img src="<?= getImageUrl($product['primary_image']) ?>" 
+                            <img src="<?= str_replace(['.jpg', '.jpeg'], '.webp', getImageUrl($product['primary_image'])) ?>" 
+                                 data-hover-src="<?= str_replace(['.jpg', '.jpeg'], '.webp', getImageUrl($product['hover_image'])) ?>"
                                  alt="<?= htmlspecialchars($product['name']) ?>"
-                                 class="w-full h-full object-cover">
-                            <?php if ($product['hover_image']): ?>
-                                <img src="<?= getImageUrl($product['hover_image']) ?>" 
-                                     alt="<?= htmlspecialchars($product['name']) ?>"
-                                     class="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition">
-                            <?php endif; ?>
+                                 class="w-full h-full object-cover transition-opacity duration-300"
+                                 onmouseover="this.src=this.dataset.hoverSrc"
+                                 onmouseout="this.src='<?= str_replace(['.jpg', '.jpeg'], '.webp', getImageUrl($product['primary_image'])) ?>'"
+                                 onerror="this.src='<?= str_replace(['.jpg', '.jpeg'], '.webp', asset('images/placeholder.jpg')) ?>'">
                             <div class="absolute bottom-4 right-4">
                                 <button class="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -289,12 +288,12 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
         <h2 class="text-xl font-semibold mb-2">Subscribe to our newsletter to get updates</h2>
         <p class="text-gray-500 mb-6">to our latest collections</p>
         <form class="max-w-md mx-auto">
-            <div class="flex gap-4">
+            <div class="flex flex-col md:flex-row gap-4">
                 <input type="email" 
                        placeholder="Enter your email" 
-                       class="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:border-black">
+                       class="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:border-black">
                 <button type="submit" 
-                        class="px-6 py-2 bg-black text-white rounded-full hover:bg-gray-800">
+                        class="w-full md:w-auto px-6 py-2 bg-black text-white rounded-full hover:bg-gray-800">
                     Subscribe
                 </button>
             </div>
@@ -309,7 +308,7 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
 const carouselState = {
     categories: { currentIndex: 0, itemCount: <?= count($categories) ?>, itemsPerView: 4, scrollAmount: 1, infinite: true },
     featured: { currentIndex: 0, itemCount: <?= count($featuredProducts) ?>, itemsPerView: 3, scrollAmount: 1, infinite: true },
-    brands: { currentIndex: 0, itemCount: <?= ceil(count($brands) / 8) ?>, itemsPerView: 1, scrollAmount: 1, infinite: true }
+    brands: { currentIndex: 0, itemCount: <?= count($brands) ?>, itemsPerView: 8, scrollAmount: 1, infinite: true }
 };
 
 function moveCarousel(type, direction) {
@@ -331,16 +330,11 @@ function moveCarousel(type, direction) {
     // Update state
     state.currentIndex = newIndex;
     
-    // Calculate translation based on carousel type
-    let translateX;
-    if (type === 'brands') {
-        translateX = -(newIndex * 100);
-    } else {
-        translateX = -(newIndex * (100 / state.itemsPerView));
-    }
+    // Calculate translation
+    const translateX = -(newIndex * (100 / state.itemsPerView));
     
     // Apply smooth transition
-    carousel.style.transition = 'transform 0.8s ease-in-out';
+    carousel.style.transition = 'transform 0.3s ease-in-out';
     carousel.style.transform = `translateX(${translateX}%)`;
 }
 
@@ -350,18 +344,21 @@ function updateItemsPerView() {
     if (width < 768) { // mobile
         carouselState.categories.itemsPerView = 1;
         carouselState.featured.itemsPerView = 1;
-        carouselState.brands.itemsPerView = 1;
+        carouselState.brands.itemsPerView = 1; // Show 1 brand at a time on mobile
+    } else if (width < 1024) { // tablet
+        carouselState.categories.itemsPerView = 2;
+        carouselState.featured.itemsPerView = 2;
+        carouselState.brands.itemsPerView = 4;
     } else { // desktop
         carouselState.categories.itemsPerView = 4;
         carouselState.featured.itemsPerView = 3;
-        carouselState.brands.itemsPerView = 1;
+        carouselState.brands.itemsPerView = 8; // Show 8 brands in one row on desktop
     }
     
     // Reset positions and update
     Object.keys(carouselState).forEach(type => {
         const state = carouselState[type];
         state.currentIndex = 0;
-        // Update maxIndex based on itemsPerView
         state.maxIndex = Math.max(0, state.itemCount - state.itemsPerView);
         
         const carousel = document.getElementById(`${type}-carousel`);
@@ -369,7 +366,7 @@ function updateItemsPerView() {
             carousel.style.transition = 'none';
             carousel.style.transform = 'translateX(0)';
             carousel.offsetHeight; // Force reflow
-            carousel.style.transition = 'transform 0.8s ease-in-out';
+            carousel.style.transition = 'transform 0.3s ease-in-out';
         }
     });
 }

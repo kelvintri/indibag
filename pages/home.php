@@ -48,7 +48,7 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="rounded-lg overflow-hidden">
             <div id="hero-carousel" class="relative" style="aspect-ratio: 1740/608;">
                 <div class="absolute inset-0 w-full h-full transition-opacity duration-500">
-                    <img src="/assets/images/hero/hero1.jpg" alt="Summer Collection" class="w-full h-full object-cover">
+                    <img src="/assets/images/hero/hero1.webp" alt="Summer Collection" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
                         <div class="text-center text-white">
                             <h1 class="text-4xl md:text-6xl font-bold mb-4">Level up your style with our<br>summer collections</h1>
@@ -59,7 +59,7 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                 </div>
                 <div class="absolute inset-0 w-full h-full transition-opacity duration-500 opacity-0">
-                    <img src="/assets/images/hero/hero2.jpg" alt="Summer Collection" class="w-full h-full object-cover">
+                    <img src="/assets/images/hero/hero2.webp" alt="Summer Collection" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
                         <div class="text-center text-white">
                             <h1 class="text-4xl md:text-6xl font-bold mb-4">Discover our latest<br>fashion trends</h1>

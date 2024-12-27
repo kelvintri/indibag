@@ -281,22 +281,28 @@ try {
             break;
 
         case '/orders/create':
-            Auth::requireLogin();
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                Auth::requireLogin();
+                header('Content-Type: application/json');
+                
                 // Get JSON input
                 $json = file_get_contents('php://input');
-                error_log('Raw input: ' . $json);
-                
                 $data = json_decode($json, true);
-                error_log('Decoded data: ' . print_r($data, true));
                 
                 // Get cart items
                 $cart = new Cart();
                 $items = $cart->getItems();
                 
+                if (empty($items)) {
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Cart is empty'
+                    ]);
+                    exit;
+                }
+                
                 // Add items to order data
                 $data['items'] = $items;
-                error_log('Prepared order data: ' . print_r($data, true));
                 
                 // Create order
                 $order = new Order();
@@ -305,30 +311,93 @@ try {
                 // Clear cart if order was created successfully
                 if ($result['success']) {
                     $cart->clear();
-                    // Return order ID for redirection
-                    $result['order_id'] = $order->getLastInsertId();
+                    $order_id = $order->getLastInsertId();
+                    $response = [
+                        'success' => true,
+                        'order_id' => $order_id,
+                        'redirect_url' => "/orders/{$order_id}/confirmation"
+                    ];
+                    error_log('Order creation response: ' . json_encode($response));
+                    echo json_encode($response);
+                } else {
+                    echo json_encode([
+                        'success' => false,
+                        'error' => $result['error']
+                    ]);
                 }
-                
-                header('Content-Type: application/json');
-                echo json_encode($result);
                 exit;
             }
-            header('Location: /cart');
-            break;
-
-        case '/orders/upload-payment':
-            Auth::requireLogin();
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                require_once ROOT_PATH . '/orders/upload-payment.php';
-                exit;
-            }
-            header('Location: /orders');
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            exit;
             break;
 
         case (preg_match('/^\/orders\/(\d+)\/confirmation$/', $path, $matches) ? true : false):
             Auth::requireLogin();
             $pageTitle = 'Order Confirmation - Bananina';
-            $content = renderPage(ROOT_PATH . '/pages/orders/confirmation.php');
+            
+            // Get order ID from URL
+            $order_id = $matches[1];
+            
+            // Include Order class and get order details
+            require_once ROOT_PATH . '/includes/Order.php';
+            $orderObj = new Order();
+            $order = $orderObj->getOrder($order_id);
+            
+            // Verify order belongs to user
+            if (!$order || $order['user_id'] != $_SESSION['user_id']) {
+                header('Location: /orders');
+                exit;
+            }
+            
+            // Get shipping address details
+            $db = new Database();
+            $conn = $db->getConnection();
+            $addressQuery = "SELECT * FROM addresses WHERE id = :address_id";
+            $addressStmt = $conn->prepare($addressQuery);
+            $addressStmt->bindParam(":address_id", $order['shipping_address_id']);
+            $addressStmt->execute();
+            $shippingAddress = $addressStmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Get shipping details
+            $shippingQuery = "SELECT * FROM shipping_details WHERE order_id = :order_id";
+            $shippingStmt = $conn->prepare($shippingQuery);
+            $shippingStmt->bindParam(":order_id", $order_id);
+            $shippingStmt->execute();
+            $shippingDetails = $shippingStmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Get payment details
+            $paymentQuery = "SELECT payment_method, payment_date, verified_at, transfer_proof_url 
+                           FROM payment_details 
+                           WHERE order_id = :order_id";
+            $paymentStmt = $conn->prepare($paymentQuery);
+            $paymentStmt->bindParam(":order_id", $order_id);
+            $paymentStmt->execute();
+            $paymentDetails = $paymentStmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Get order items
+            $items = $orderObj->getOrderItems($order_id);
+            
+            // Make all data available to the confirmation page
+            $orderData = [
+                'order' => $order,
+                'items' => $items,
+                'shippingAddress' => $shippingAddress,
+                'shippingDetails' => $shippingDetails,
+                'paymentDetails' => $paymentDetails
+            ];
+            extract($orderData);
+            
+            ob_start();
+            require ROOT_PATH . '/pages/orders/confirmation.php';
+            $content = ob_get_clean();
+            
+            if (empty($content)) {
+                error_log('Failed to render confirmation page for order ' . $order_id);
+                header('Location: /404');
+                exit;
+            }
+            
             require_once ROOT_PATH . '/layouts/main.php';
             exit;
             break;
@@ -384,6 +453,26 @@ try {
 
             header('Content-Type: application/json');
             echo json_encode($order);
+            exit;
+            break;
+
+        case '/orders/upload-payment':
+            Auth::requireLogin();
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                require_once ROOT_PATH . '/orders/upload-payment.php';
+                exit;
+            }
+            header('Location: /orders');
+            break;
+
+        case (preg_match('/^\/orders\/(\d+)\/cancel$/', $path, $matches) ? true : false):
+            Auth::requireLogin();
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                require_once ROOT_PATH . '/pages/orders/cancel.php';
+                exit;
+            }
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
             exit;
             break;
 

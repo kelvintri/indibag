@@ -24,122 +24,142 @@ $items = $orderObj->getOrderItems($order_id);
 ?>
 
 <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Success Icon and Message -->
     <div class="text-center mb-12">
         <div class="mb-4">
-            <svg class="mx-auto h-16 w-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 48 48">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" transform="scale(2)" />
-            </svg>
+            <div class="mx-auto h-24 w-24 rounded-full bg-green-50 flex items-center justify-center">
+                <svg class="h-12 w-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
         </div>
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Thank You for Your Order!</h1>
-        <p class="text-lg text-gray-600">Your order has been placed successfully.</p>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Order Confirmed!</h1>
+        <p class="text-lg text-gray-600">Thank you for your order. Your order number is #<?= $order['order_number'] ?></p>
     </div>
 
     <!-- Order Details -->
     <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <!-- Shipping Address -->
         <div class="px-6 py-4 border-b border-gray-200">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h2 class="text-lg font-semibold text-gray-900">Order #<?= $order['id'] ?></h2>
-                    <p class="text-sm text-gray-500">Placed on <?= date('F j, Y', strtotime($order['created_at'])) ?></p>
-                </div>
-                <span class="px-3 py-1 rounded-full text-sm 
-                    <?php
-                    switch ($order['status']) {
-                        case 'pending_payment':
-                            echo 'bg-yellow-100 text-yellow-800';
-                            break;
-                        case 'payment_uploaded':
-                            echo 'bg-blue-100 text-blue-800';
-                            break;
-                        case 'payment_verified':
-                        case 'processing':
-                            echo 'bg-indigo-100 text-indigo-800';
-                            break;
-                        case 'shipped':
-                            echo 'bg-purple-100 text-purple-800';
-                            break;
-                        case 'delivered':
-                            echo 'bg-green-100 text-green-800';
-                            break;
-                        case 'cancelled':
-                        case 'refunded':
-                            echo 'bg-red-100 text-red-800';
-                            break;
-                    }
-                    ?>">
-                    <?= ucwords(str_replace('_', ' ', $order['status'])) ?>
-                </span>
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Shipping Address</h2>
+            <div class="text-gray-600">
+                <p class="font-medium"><?= htmlspecialchars($shippingAddress['recipient_name']) ?></p>
+                <p><?= htmlspecialchars($shippingAddress['phone']) ?></p>
+                <p><?= htmlspecialchars($shippingAddress['street_address']) ?></p>
+                <p>
+                    <?= htmlspecialchars($shippingAddress['district']) ?>,
+                    <?= htmlspecialchars($shippingAddress['city']) ?>
+                </p>
+                <p>
+                    <?= htmlspecialchars($shippingAddress['province']) ?>,
+                    <?= htmlspecialchars($shippingAddress['postal_code']) ?>
+                </p>
+            </div>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Payment Method</h2>
+            <div class="text-gray-600">
+                <p class="capitalize"><?= str_replace('_', ' ', $order['payment_method']) ?></p>
+                <?php if ($order['payment_method'] === 'bank_transfer'): ?>
+                    <div class="mt-2 p-4 bg-yellow-50 rounded-md">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">
+                                    Please upload your payment proof immediately to avoid order cancellation.
+                                </p>
+                                <p class="mt-1 text-sm text-yellow-700">
+                                    Your order will be processed after payment verification.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Shipping Method -->
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Shipping Method</h2>
+            <div class="text-gray-600">
+                <?php if ($shippingDetails): ?>
+                    <p>
+                        <?= htmlspecialchars($shippingDetails['courier_name']) ?> 
+                        <?= htmlspecialchars($shippingDetails['service_type']) ?>
+                    </p>
+                    <?php if ($shippingDetails['estimated_delivery_date']): ?>
+                        <p class="mt-1">
+                            Estimated delivery: <?= date('d F Y', strtotime($shippingDetails['estimated_delivery_date'])) ?>
+                        </p>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <p>Standard Shipping</p>
+                    <p class="mt-1">Estimated delivery: <?= date('d F Y', strtotime('+3 days')) ?></p>
+                <?php endif; ?>
             </div>
         </div>
 
         <!-- Order Items -->
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-base font-semibold text-gray-900 mb-4">Order Items</h3>
-            <div class="space-y-4">
-                <?php foreach ($items as $item): ?>
-                    <div class="flex items-center">
-                        <div class="w-16 h-16 flex-shrink-0">
-                            <img src="<?= getImageUrl($item['image_url']) ?>" 
-                                 alt="<?= htmlspecialchars($item['name']) ?>"
-                                 class="w-full h-full object-contain rounded-md">
+        <div class="px-6 py-4 space-y-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Order Items</h2>
+            <?php foreach ($items as $item): ?>
+                <div class="flex items-start">
+                    <div class="w-20 h-20 flex-shrink-0">
+                        <img src="<?= getImageUrl($item['image_url']) ?>" 
+                             alt="<?= htmlspecialchars($item['name']) ?>"
+                             class="w-full h-full object-contain rounded-md">
+                    </div>
+                    <div class="ml-4 flex-1 flex justify-between">
+                        <div>
+                            <h3 class="text-base font-medium text-gray-900"><?= htmlspecialchars($item['name']) ?></h3>
+                            <p class="text-gray-600">Rp <?= number_format($item['price'], 0, ',', '.') ?> × <?= $item['quantity'] ?></p>
                         </div>
-                        <div class="ml-4 flex-1">
-                            <p class="text-sm font-medium text-gray-900"><?= htmlspecialchars($item['name']) ?></p>
-                            <p class="text-sm text-gray-500">Quantity: <?= $item['quantity'] ?></p>
-                            <p class="text-sm font-medium text-gray-900">
+                        <div class="text-right">
+                            <p class="text-base font-medium text-gray-900">
                                 Rp <?= number_format($item['price'] * $item['quantity'], 0, ',', '.') ?>
                             </p>
                         </div>
                     </div>
-                <?php endforeach; ?>
-            </div>
+                </div>
+            <?php endforeach; ?>
         </div>
 
         <!-- Order Summary -->
-        <div class="px-6 py-4 border-b border-gray-200">
+        <div class="px-6 py-4 border-t border-gray-200">
             <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Subtotal</span>
-                    <span class="text-gray-900">Rp <?= number_format($order['total_amount'], 0, ',', '.') ?></span>
+                <div class="flex justify-between text-gray-600">
+                    <span>Subtotal</span>
+                    <span>Rp <?= number_format($order['total_amount'], 0, ',', '.') ?></span>
                 </div>
-                <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Shipping</span>
-                    <span class="text-gray-900">Rp <?= number_format($order['shipping_cost'] ?? 0, 0, ',', '.') ?></span>
+                <div class="flex justify-between text-gray-600">
+                    <span>Shipping</span>
+                    <span>Rp <?= number_format($order['shipping_cost'], 0, ',', '.') ?></span>
                 </div>
-                <div class="border-t border-gray-200 mt-4 pt-4">
+                <div class="pt-4 border-t border-gray-200">
                     <div class="flex justify-between">
-                        <span class="text-base font-medium text-gray-900">Total</span>
-                        <span class="text-base font-medium text-gray-900">
-                            Rp <?= number_format($order['total_amount'] + ($order['shipping_cost'] ?? 0), 0, ',', '.') ?>
+                        <span class="text-lg font-bold text-gray-900">Total</span>
+                        <span class="text-lg font-bold text-gray-900">
+                            Rp <?= number_format($order['total_amount'] + $order['shipping_cost'], 0, ',', '.') ?>
                         </span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Payment Instructions -->
-        <?php if ($order['status'] === 'pending_payment'): ?>
-            <div class="px-6 py-4 bg-yellow-50">
-                <h3 class="text-base font-semibold text-yellow-800 mb-2">Payment Instructions</h3>
-                <p class="text-sm text-yellow-700 mb-4">
-                    Please complete your payment to process your order. You can upload your payment proof from your order details.
-                </p>
-                <div class="flex justify-end">
-                    <a href="/orders" 
-                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
-                        Go to My Orders
-                    </a>
-                </div>
-            </div>
-        <?php else: ?>
-            <div class="px-6 py-4 bg-gray-50">
-                <div class="flex justify-end">
-                    <a href="/orders" 
-                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
-                        Go to My Orders
-                    </a>
-                </div>
-            </div>
-        <?php endif; ?>
+        <!-- Action Buttons -->
+        <div class="px-6 py-4 bg-gray-50 flex justify-between items-center">
+            <a href="/products" class="text-blue-600 hover:text-blue-800 font-medium">
+                Continue Shopping
+            </a>
+            <a href="/orders" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                View Order Details
+            </a>
+        </div>
     </div>
 </div> 

@@ -17,6 +17,28 @@ $stmt = $conn->prepare($query);
 $stmt->bindParam(":user_id", $_SESSION['user_id']);
 $stmt->execute();
 $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Function to get status class
+function getStatusClass($status) {
+    switch ($status) {
+        case 'pending_payment':
+            return 'bg-yellow-100 text-yellow-800';
+        case 'payment_uploaded':
+            return 'bg-blue-100 text-blue-800';
+        case 'payment_verified':
+        case 'processing':
+            return 'bg-indigo-100 text-indigo-800';
+        case 'shipped':
+            return 'bg-purple-100 text-purple-800';
+        case 'delivered':
+            return 'bg-green-100 text-green-800';
+        case 'cancelled':
+        case 'refunded':
+            return 'bg-red-100 text-red-800';
+        default:
+            return 'bg-gray-100 text-gray-800';
+    }
+}
 ?>
 
 <div x-data="{ 
@@ -43,6 +65,36 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (error) {
             console.error('Error loading order details:', error);
             alert('Failed to load order details. Please try again.');
+        }
+    },
+
+    async cancelOrder(orderId) {
+        if (!confirm('Are you sure you want to cancel this order?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/orders/${orderId}/cancel`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to cancel order');
+            }
+
+            const result = await response.json();
+            if (result.success) {
+                // Reload the page to show updated status
+                window.location.reload();
+            } else {
+                alert(result.error || 'Failed to cancel order');
+            }
+        } catch (error) {
+            console.error('Error cancelling order:', error);
+            alert('Failed to cancel order. Please try again.');
         }
     },
 
@@ -194,33 +246,20 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                         <div class="text-right">
                             <div class="mb-1">
-                                <span class="px-3 py-1 rounded-full text-sm 
-                                    <?php
-                                    switch ($order['status']) {
-                                        case 'pending_payment':
-                                            echo 'bg-yellow-100 text-yellow-800';
-                                            break;
-                                        case 'payment_uploaded':
-                                            echo 'bg-blue-100 text-blue-800';
-                                            break;
-                                        case 'payment_verified':
-                                        case 'processing':
-                                            echo 'bg-indigo-100 text-indigo-800';
-                                            break;
-                                        case 'shipped':
-                                            echo 'bg-purple-100 text-purple-800';
-                                            break;
-                                        case 'delivered':
-                                            echo 'bg-green-100 text-green-800';
-                                            break;
-                                        case 'cancelled':
-                                        case 'refunded':
-                                            echo 'bg-red-100 text-red-800';
-                                            break;
-                                    }
-                                    ?>">
-                                    <?= ucwords(str_replace('_', ' ', $order['status'])) ?>
-                                </span>
+                                <div class="flex items-center">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        <?= getStatusClass($order['status']) ?>">
+                                        <?= ucfirst($order['status']) ?>
+                                    </span>
+                                    <?php if ($order['status'] === 'pending_payment'): ?>
+                                        <div class="ml-2 flex items-center text-yellow-600">
+                                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                            </svg>
+                                            <span class="ml-1 text-xs">Please upload payment proof</span>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                             <p class="text-sm text-gray-500">
                                 <?= $order['item_count'] ?> item<?= $order['item_count'] > 1 ? 's' : '' ?>
@@ -234,7 +273,7 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <div>
                                 <p class="text-sm text-gray-600">Payment Method</p>
                                 <p class="font-medium">
-                                    <?= ucwords(str_replace('_', ' ', $order['payment_method'])) ?>
+                                    <?= $order['payment_method'] ? ucwords(str_replace('_', ' ', $order['payment_method'])) : 'Not selected' ?>
                                 </p>
                             </div>
                             <div class="text-right">
@@ -255,9 +294,15 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <?= $order['verified_at'] ? 'Verified' : ($order['payment_date'] ? 'Uploaded' : 'Pending') ?>
                                 </span>
                             </div>
-                            <div>
+                            <div class="flex items-center space-x-4">
+                                <?php if ($order['status'] === 'pending_payment'): ?>
+                                    <button @click="cancelOrder(<?= $order['id'] ?>)"
+                                            class="inline-flex items-center text-sm text-red-600 hover:text-red-800">
+                                        Cancel Order
+                                    </button>
+                                <?php endif; ?>
                                 <button @click="loadOrderDetails(<?= $order['id'] ?>)" 
-                                   class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800">
+                                        class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800">
                                     View Details
                                     <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />

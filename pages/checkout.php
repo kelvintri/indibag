@@ -281,12 +281,11 @@ document.addEventListener('alpine:init', () => {
                 console.log('Server response:', result);
                 
                 if (result.success) {
-                    // Redirect to confirmation page
-                    window.location.href = `/orders/${result.order_id}/confirmation`;
+                    console.log('Redirecting to:', result.redirect_url);
+                    window.location.replace(result.redirect_url);
                 } else {
                     alert(result.error || 'Failed to create order');
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Place Order';
+                    this.isProcessing = false;
                 }
             } catch (error) {
                 console.error('Error placing order:', error);

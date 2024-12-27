@@ -192,7 +192,7 @@ $brands = $brandsStmt->fetchAll(PDO::FETCH_ASSOC);
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="opacity-100 transform translate-x-0"
          x-transition:leave-end="opacity-0 transform translate-x-full"
-         class="fixed bottom-4 right-4 z-50"
+         class="fixed bottom-4 right-4 z-[9999]"
          @click="showNotification = false">
         <div :class="{
             'bg-green-500': notificationType === 'success',

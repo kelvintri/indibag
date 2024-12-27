@@ -96,8 +96,8 @@ try {
             $clean_name = preg_replace('/[^a-zA-Z0-9\s]/', '', $_POST['name']);
             $clean_name = str_replace(' ', '_', trim(strtolower($clean_name)));
             
-            // Generate paths
-            $filename = $clean_name . ($is_primary ? '_primary.jpg' : '_hover.jpg');
+            // Generate paths with WebP extension
+            $filename = $clean_name . ($is_primary ? '_primary.webp' : '_hover.webp');
             $upload_path = $upload_dir . $filename;
             $web_path = '/assets/images/' . $category_folder . ($is_primary ? '/primary/' : '/hover/') . $filename;
 
@@ -109,10 +109,64 @@ try {
                 mkdir($upload_dir, 0777, true);
             }
 
-            // Upload file
-            if (!move_uploaded_file($_FILES[$field]['tmp_name'], $upload_path)) {
-                throw new Exception('Failed to move ' . ($is_primary ? 'primary' : 'hover') . ' image');
+            // Create image resource based on uploaded file type
+            $source_image = null;
+            $image_type = exif_imagetype($_FILES[$field]['tmp_name']);
+            
+            switch ($image_type) {
+                case IMAGETYPE_JPEG:
+                    $source_image = imagecreatefromjpeg($_FILES[$field]['tmp_name']);
+                    break;
+                case IMAGETYPE_PNG:
+                    $source_image = imagecreatefrompng($_FILES[$field]['tmp_name']);
+                    break;
+                case IMAGETYPE_WEBP:
+                    $source_image = imagecreatefromwebp($_FILES[$field]['tmp_name']);
+                    break;
+                default:
+                    throw new Exception('Unsupported image format. Please upload JPG, PNG, or WebP');
             }
+
+            if (!$source_image) {
+                throw new Exception('Failed to create image resource');
+            }
+
+            // Get original image dimensions
+            $width = imagesx($source_image);
+            $height = imagesy($source_image);
+
+            // Set maximum dimensions while maintaining aspect ratio
+            $max_width = 1200;
+            $max_height = 1200;
+
+            if ($width > $max_width || $height > $max_height) {
+                $ratio = min($max_width / $width, $max_height / $height);
+                $new_width = round($width * $ratio);
+                $new_height = round($height * $ratio);
+
+                $resized_image = imagecreatetruecolor($new_width, $new_height);
+                
+                // Preserve transparency
+                imagepalettetotruecolor($resized_image);
+                imagealphablending($resized_image, false);
+                imagesavealpha($resized_image, true);
+                
+                imagecopyresampled(
+                    $resized_image, $source_image,
+                    0, 0, 0, 0,
+                    $new_width, $new_height, $width, $height
+                );
+                
+                $source_image = $resized_image;
+            }
+
+            // Save as WebP with quality setting
+            if (!imagewebp($source_image, $upload_path, 85)) { // 85 is a good balance between quality and file size
+                throw new Exception('Failed to save WebP image');
+            }
+
+            // Clean up
+            imagedestroy($source_image);
 
             // Insert into product_galleries
             $stmt = $conn->prepare("

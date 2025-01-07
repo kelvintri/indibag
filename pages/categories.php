@@ -30,40 +30,76 @@ $imageStmt->execute();
 $categoryImages = $imageStmt->fetchAll(PDO::FETCH_KEY_PAIR);
 ?>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h1 class="text-3xl font-bold text-gray-900 mb-8">Shop by Category</h1>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Header Section -->
+    <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">Browse Categories</h1>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+            Explore our carefully curated collection of products across different categories
+        </p>
+    </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Categories Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         <?php foreach ($categories as $category): ?>
             <a href="/products?category[]=<?= $category['id'] ?>" 
-               class="group relative bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition">
+               class="group relative bg-white rounded-xl overflow-hidden hover:shadow-xl transition duration-300 ease-in-out transform hover:-translate-y-1">
                 <!-- Category Image -->
-                <div class="aspect-[4/3] w-full overflow-hidden bg-gray-200">
+                <div class="aspect-[4/3] w-full overflow-hidden">
                     <?php if (isset($categoryImages[$category['id']])): ?>
                         <img src="<?= getImageUrl($categoryImages[$category['id']]) ?>" 
                              alt="<?= htmlspecialchars($category['name']) ?>"
-                             class="w-full h-full object-cover object-center group-hover:opacity-75 transition"
+                             class="w-full h-full object-cover object-center transform group-hover:scale-110 transition duration-500"
                              onerror="this.src='<?= asset('images/placeholder.jpg') ?>'">
                     <?php else: ?>
-                        <div class="w-full h-full flex items-center justify-center text-gray-500">
-                            <span class="text-lg">No image available</span>
+                        <div class="w-full h-full flex items-center justify-center bg-gray-100">
+                            <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
+                                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
                         </div>
                     <?php endif; ?>
                 </div>
 
                 <!-- Category Info -->
-                <div class="p-4">
-                    <h2 class="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition">
-                        <?= htmlspecialchars($category['name']) ?>
-                    </h2>
-                    <p class="mt-1 text-sm text-gray-500">
-                        <?= $category['product_count'] ?> Products
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition">
+                            <?= htmlspecialchars($category['name']) ?>
+                        </h2>
+                        <span class="inline-flex items-center justify-center px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-800">
+                            <?= $category['product_count'] ?>
+                        </span>
+                    </div>
+                    
+                    <?php if (!empty($category['description'])): ?>
+                    <p class="text-sm text-gray-600 line-clamp-2">
+                        <?= htmlspecialchars($category['description']) ?>
                     </p>
-                </div>
+                    <?php endif; ?>
 
-                <!-- Hover Overlay -->
-                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity"></div>
+                    <!-- View Category Button -->
+                    <div class="mt-4 flex items-center text-blue-600 text-sm font-medium">
+                        Browse Category
+                        <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition" 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+                </div>
             </a>
         <?php endforeach; ?>
     </div>
+
+    <!-- Empty State -->
+    <?php if (empty($categories)): ?>
+    <div class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No categories found</h3>
+        <p class="mt-1 text-sm text-gray-500">Check back soon for new categories.</p>
+    </div>
+    <?php endif; ?>
 </div> 

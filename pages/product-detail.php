@@ -46,28 +46,7 @@ $relatedProducts = $relatedStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Output the HTML directly, no need for ob_start/ob_get_clean
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($product['name']) ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .star-rating {
-            color: #FFD700;
-        }
-        .thumbnail:hover {
-            opacity: 0.75;
-            transition: opacity 0.2s ease-in-out;
-        }
-    </style>
-</head>
-<body class="bg-white">
+
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Breadcrumb -->
         <nav class="flex items-center gap-2 text-sm mb-8">
@@ -404,8 +383,6 @@ $relatedProducts = $relatedStmt->fetchAll(PDO::FETCH_ASSOC);
             });
         }
     </script>
-</body>
-</html>
 
 
 <?php

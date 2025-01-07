@@ -11,8 +11,6 @@
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="/assets/css/style.css">
     <style>
         [x-cloak] { display: none !important; }
     </style>
@@ -35,7 +33,5 @@
     <!-- Footer -->
     <?php require_once ROOT_PATH . '/includes/footer.php'; ?>
 
-    <!-- Custom JS -->
-    <script src="/assets/js/main.js"></script>
 </body>
 </html> 

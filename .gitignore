@@ -13,6 +13,8 @@
 *.eps
 
 # Image directories
+node_modules/
+src/
 public/assets/images/
 public/assets/uploads/
 public/images/
@@ -28,6 +30,10 @@ config/
 **/thumbnails/
 **/_thumbs/
 **/_thumbnails/
+package-lock.json
+package.json
+tailwind.config.js
+input.css
 
 # Keep placeholder/default images
 !placeholder.jpg

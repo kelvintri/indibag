@@ -12,22 +12,6 @@ $query = "SELECT c.*, COUNT(p.id) as product_count
 $stmt = $conn->prepare($query);
 $stmt->execute();
 $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Get one sample product image for each category
-$imageQuery = "SELECT c.id as category_id, pg.image_url
-               FROM categories c
-               LEFT JOIN products p ON c.id = p.category_id AND p.is_active = 1
-               LEFT JOIN product_galleries pg ON p.id = pg.product_id AND pg.is_primary = 1
-               WHERE p.id IN (
-                   SELECT MIN(products.id)
-                   FROM products
-                   WHERE category_id = c.id AND is_active = 1
-                   GROUP BY category_id
-               )";
-
-$imageStmt = $conn->prepare($imageQuery);
-$imageStmt->execute();
-$categoryImages = $imageStmt->fetchAll(PDO::FETCH_KEY_PAIR);
 ?>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -40,25 +24,20 @@ $categoryImages = $imageStmt->fetchAll(PDO::FETCH_KEY_PAIR);
     </div>
 
     <!-- Categories Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <?php foreach ($categories as $category): ?>
             <a href="/products?category[]=<?= $category['id'] ?>" 
-               class="group relative bg-white rounded-xl overflow-hidden hover:shadow-xl transition duration-300 ease-in-out transform hover:-translate-y-1">
+               class="group relative bg-white rounded-lg overflow-hidden hover:shadow-xl transition duration-300 ease-in-out transform hover:-translate-y-1">
                 <!-- Category Image -->
-                <div class="aspect-[4/3] w-full overflow-hidden">
-                    <?php if (isset($categoryImages[$category['id']])): ?>
-                        <img src="<?= getImageUrl($categoryImages[$category['id']]) ?>" 
-                             alt="<?= htmlspecialchars($category['name']) ?>"
-                             class="w-full h-full object-cover object-center transform group-hover:scale-110 transition duration-500"
-                             onerror="this.src='<?= asset('images/placeholder.jpg') ?>'">
-                    <?php else: ?>
-                        <div class="w-full h-full flex items-center justify-center bg-gray-100">
-                            <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
-                                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                        </div>
-                    <?php endif; ?>
+                <div class="w-full h-48 overflow-hidden bg-gray-50">
+                    <?php 
+                    $imagePath = "/assets/images/categories/{$category['slug']}.webp";
+                    $fallbackPath = "/assets/images/categories/{$category['slug']}.png";
+                    ?>
+                    <img src="<?= $imagePath ?>" 
+                         alt="<?= htmlspecialchars($category['name']) ?>"
+                         class="w-full h-full object-cover object-center transform group-hover:scale-110 transition duration-500"
+                         onerror="this.onerror=null; this.src='<?= $fallbackPath ?>'; this.onerror=function(){this.src='<?= asset('images/categories/placeholder.png') ?>';}">
                 </div>
 
                 <!-- Category Info -->

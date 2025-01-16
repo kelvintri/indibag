@@ -269,10 +269,10 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
 
     <!-- Promo Banner -->
     <div class="mb-12">
-        <div class="relative rounded-lg overflow-hidden">
-            <img src="/assets/images/promo-banner.jpg" alt="Special Offer" class="w-full h-64 object-cover">
-            <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center">
-                <div class="px-8">
+        <div class="relative rounded-xl overflow-hidden">
+            <img src="/assets/images/promo-banner.webp" alt="Special Offer" class="w-full h-72 object-cover">
+            <div class="absolute inset-0  flex items-center">
+                <div class="px-8 bg-black bg-opacity-50">
                     <p class="text-white text-sm mb-2">LIMITED OFFER</p>
                     <h3 class="text-white text-2xl font-bold mb-4">35% off only this friday<br>and get special gift</h3>
                     <button class="bg-white text-black px-6 py-2 rounded-full hover:bg-gray-100">

@@ -8,8 +8,9 @@
     <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
             <!-- Logo -->
+             
             <a href="/" class="flex items-center">
-                <span class="text-xl font-bold text-gray-800">Bananina</span>
+            <img src="/assets/images/logo.png" alt="Bananina" class="w-16 h-16">
             </a>
 
             <!-- Desktop Navigation -->

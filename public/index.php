@@ -231,6 +231,11 @@ try {
             $content = renderPage(ROOT_PATH . '/pages/register.php');
             break;
 
+        case '/about':
+            $pageTitle = 'About - Bananina';
+            $content = renderPage(ROOT_PATH . '/pages/about.php');
+            break;    
+
         case '/logout':
             $auth = new Auth();
             $auth->logout();

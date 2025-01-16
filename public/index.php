@@ -180,6 +180,11 @@ try {
             $content = renderPage(ROOT_PATH . '/pages/categories.php');
             break;
 
+        case '/brands':
+            $pageTitle = 'Brands - Bananina';
+            $content = renderPage(ROOT_PATH . '/pages/brands.php');
+            break;
+
         case '/cart':
             $pageTitle = 'Shopping Cart - Bananina';
             $content = renderPage(ROOT_PATH . '/pages/cart.php');

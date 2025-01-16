@@ -11,6 +11,7 @@
 *.psd
 *.ai
 *.eps
+*.rar
 
 # Image directories
 node_modules/

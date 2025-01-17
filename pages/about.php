@@ -111,24 +111,84 @@
     <!-- Developer Info -->
     <div class="bg-white rounded-xl shadow-md overflow-hidden mt-12">
         <div class="p-8">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">Fullstack Developer</h2>
-            <div class="flex items-center space-x-4">
-                <div class="flex-shrink-0">
-                    <svg class="h-16 w-16 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
+            <h2 class="text-2xl font-bold text-gray-900 mb-8 text-center">Dibuat oleh Kelompok 6</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Developer 1 -->
+                <div class="bg-gray-50 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex flex-col items-center space-y-4">
+                        <div class="flex-shrink-0">
+                            <svg class="h-20 w-20 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        </div>
+                        <div class="text-center">
+                            <h3 class="text-xl font-semibold text-gray-900">KELVIN TRIANSYAH</h3>
+                            <p class="text-gray-600 mt-1">20240801218</p>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <h3 class="text-xl font-semibold text-gray-900">Kelvin Triansyah</h3>
-                    <p class="text-gray-600">20240801218</p>
-                    <p class="text-gray-600">ITB STIKOM BALI</p>
+
+                <!-- Developer 2 -->
+                <div class="bg-gray-50 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex flex-col items-center space-y-4">
+                        <div class="flex-shrink-0">
+                            <svg class="h-20 w-20 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        </div>
+                        <div class="text-center">
+                            <h3 class="text-xl font-semibold text-gray-900">KADEK DAEGAL AGUSTA</h3>
+                            <p class="text-gray-600 mt-1">230030455</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Developer 3 -->
+                <div class="bg-gray-50 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex flex-col items-center space-y-4">
+                        <div class="flex-shrink-0">
+                            <svg class="h-20 w-20 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        </div>
+                        <div class="text-center">
+                            <h3 class="text-xl font-semibold text-gray-900">I GEDE SIDHI WIDYANTARA</h3>
+                            <p class="text-gray-600 mt-1">230030295</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Developer 4 -->
+                <div class="bg-gray-50 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex flex-col items-center space-y-4">
+                        <div class="flex-shrink-0">
+                            <svg class="h-20 w-20 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        </div>
+                        <div class="text-center">
+                            <h3 class="text-xl font-semibold text-gray-900">NI KADEK INTAN AMANDA PUTRI</h3>
+                            <p class="text-gray-600 mt-1">230030308</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Developer 5 -->
+                <div class="bg-gray-50 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex flex-col items-center space-y-4">
+                        <div class="flex-shrink-0">
+                            <svg class="h-20 w-20 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        </div>
+                        <div class="text-center">
+                            <h3 class="text-xl font-semibold text-gray-900">NI KOMANG INDIRA DANISWARA</h3>
+                            <p class="text-gray-600 mt-1">230030525</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Project Description -->
-    <div class="mt-12 bg-white rounded-xl shadow-md overflow-hidden">
-
-    </div>
 </div> 

@@ -33,11 +33,12 @@ $brands = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php 
                     $logoPath = "/assets/images/Brand/{$brand['slug']}.webp";
                     $fallbackPath = "/assets/images/Brand/{$brand['slug']}.png";
+                    $smallerPath = "/assets/images/brands/{$brand['slug']}.webp";
                     ?>
                     <img src="<?= $logoPath ?>" 
                          alt="<?= htmlspecialchars($brand['name']) ?>"
                          class="max-h-full max-w-full object-contain filter group-hover:brightness-110 transition duration-500"
-                         onerror="this.onerror=null; this.src='<?= $fallbackPath ?>'; this.onerror=function(){this.src='<?= asset('images/Brand/placeholder.png') ?>';}">
+                         onerror="this.onerror=null; this.src='<?= $fallbackPath ?>'; this.onerror=function(){this.src='<?= $smallerPath ?>'; this.onerror=function(){this.src='<?= asset('images/Brand/placeholder.png') ?>';};}">
                 </div>
 
                 <!-- Brand Info -->

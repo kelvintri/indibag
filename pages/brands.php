@@ -31,13 +31,13 @@ $brands = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <!-- Brand Image -->
                 <div class="w-full h-48 overflow-hidden bg-gray-50 flex items-center justify-center p-6">
                     <?php 
-                    $logoPath = "/assets/images/brands/{$brand['slug']}.webp";
-                    $fallbackPath = "/assets/images/brands/{$brand['slug']}.png";
+                    $logoPath = "/assets/images/Brand/{$brand['slug']}.webp";
+                    $fallbackPath = "/assets/images/Brand/{$brand['slug']}.png";
                     ?>
                     <img src="<?= $logoPath ?>" 
                          alt="<?= htmlspecialchars($brand['name']) ?>"
                          class="max-h-full max-w-full object-contain filter group-hover:brightness-110 transition duration-500"
-                         onerror="this.onerror=null; this.src='<?= $fallbackPath ?>'; this.onerror=function(){this.src='<?= asset('images/brands/placeholder.png') ?>';}">
+                         onerror="this.onerror=null; this.src='<?= $fallbackPath ?>'; this.onerror=function(){this.src='<?= asset('images/Brand/placeholder.png') ?>';}">
                 </div>
 
                 <!-- Brand Info -->
@@ -83,4 +83,4 @@ $brands = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <p class="mt-1 text-sm text-gray-500">Check back soon for new brands.</p>
     </div>
     <?php endif; ?>
-</div> 
+</div>  

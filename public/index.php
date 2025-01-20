@@ -145,6 +145,47 @@ try {
                 exit;
                 break;
 
+            case '/admin/categories' === $path:
+                AdminAuth::requireAdmin();
+                $pageTitle = 'Manage Categories';
+                $content = ROOT_PATH . '/pages/admin/categories.php';
+                require_once ROOT_PATH . '/includes/admin-layout.php';
+                exit;
+                break;
+
+            case '/admin/categories/create' === $path:
+                AdminAuth::requireAdmin();
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    require_once ROOT_PATH . '/pages/admin/categories/create.php';
+                    exit;
+                }
+                http_response_code(405);
+                echo json_encode(['error' => 'Method not allowed']);
+                exit;
+                break;
+
+            case '/admin/categories/update' === $path:
+                AdminAuth::requireAdmin();
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    require_once ROOT_PATH . '/pages/admin/categories/update.php';
+                    exit;
+                }
+                http_response_code(405);
+                echo json_encode(['error' => 'Method not allowed']);
+                exit;
+                break;
+
+            case (preg_match('/^\/admin\/categories\/delete$/', $path) && isset($_GET['id'])) ? true : false:
+                AdminAuth::requireAdmin();
+                if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                    require_once ROOT_PATH . '/pages/admin/categories/delete.php';
+                    exit;
+                }
+                http_response_code(405);
+                echo json_encode(['error' => 'Method not allowed']);
+                exit;
+                break;
+
             case '/admin/users' === $path:
                 AdminAuth::requireAdmin();
                 $pageTitle = 'Manage Users';

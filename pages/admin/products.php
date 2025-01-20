@@ -35,17 +35,47 @@ if (isset($_GET['edit_id'])) {
 
 // Handle delete action
 if (isset($_POST['delete']) && isset($_POST['product_id'])) {
-    $stmt = $conn->prepare("
-        UPDATE products 
-        SET is_active = 0, 
-            deleted_at = NOW()
-        WHERE id = ?
-    ");
-    $stmt->execute([$_POST['product_id']]);
-    
-    ob_clean(); // Clear any output buffers
-    header("Location: /admin/products");
-    exit;
+    try {
+        $product_id = filter_var($_POST['product_id'], FILTER_VALIDATE_INT);
+        if (!$product_id) {
+            throw new Exception('ID produk tidak valid');
+        }
+
+        // Check if product has any orders
+        $stmt = $conn->prepare("
+            SELECT COUNT(*) 
+            FROM order_items 
+            WHERE product_id = ?
+        ");
+        $stmt->execute([$product_id]);
+        $orderCount = $stmt->fetchColumn();
+
+        if ($orderCount > 0) {
+            // If product has orders, do soft delete
+            $stmt = $conn->prepare("
+                UPDATE products 
+                SET is_active = 0, 
+                    deleted_at = NOW()
+                WHERE id = ?
+            ");
+            $stmt->execute([$product_id]);
+        } else {
+            // If no orders, do hard delete
+            // First, delete product galleries
+            $stmt = $conn->prepare("DELETE FROM product_galleries WHERE product_id = ?");
+            $stmt->execute([$product_id]);
+
+            // Then delete the product
+            $stmt = $conn->prepare("DELETE FROM products WHERE id = ?");
+            $stmt->execute([$product_id]);
+        }
+        
+        header("Location: /admin/products?success=" . urlencode($orderCount > 0 ? 'Produk berhasil dinonaktifkan' : 'Produk berhasil dihapus'));
+        exit;
+    } catch (Exception $e) {
+        header("Location: /admin/products?error=" . urlencode($e->getMessage()));
+        exit;
+    }
 }
 
 // Fetch categories for the product form

@@ -13,23 +13,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
         // Validate category ID
         $id = filter_var($_GET['id'], FILTER_VALIDATE_INT);
         if (!$id) {
-            throw new Exception('Invalid category ID');
+            throw new Exception('ID kategori tidak valid');
         }
 
-        // Check if category has associated products
-        $stmt = $conn->prepare("SELECT COUNT(*) FROM products WHERE category_id = ? AND deleted_at IS NULL");
+        // Check if category has any active products
+        $stmt = $conn->prepare("
+            SELECT COUNT(*) 
+            FROM products 
+            WHERE category_id = ? 
+            AND is_active = 1 
+            AND deleted_at IS NULL
+        ");
         $stmt->execute([$id]);
-        $productCount = $stmt->fetchColumn();
+        $activeProductCount = $stmt->fetchColumn();
 
-        if ($productCount > 0) {
-            throw new Exception('Cannot delete category: it has associated products');
+        if ($activeProductCount > 0) {
+            throw new Exception('Tidak dapat menghapus kategori: masih ada produk aktif dalam kategori ini');
         }
 
-        // Delete category
+        // If no active products, delete the category
         $stmt = $conn->prepare("DELETE FROM categories WHERE id = ?");
         $stmt->execute([$id]);
 
-        header('Location: /admin/categories?success=Category deleted successfully');
+        header('Location: /admin/categories?success=Kategori berhasil dihapus');
         exit;
     } catch (Exception $e) {
         header('Location: /admin/categories?error=' . urlencode($e->getMessage()));

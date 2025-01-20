@@ -16,11 +16,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $description = trim($_POST['description'] ?? '');
 
         if (!$id) {
-            throw new Exception('Invalid category ID');
+            throw new Exception('ID kategori tidak valid');
         }
 
         if (empty($name)) {
-            throw new Exception('Category name is required');
+            throw new Exception('Nama kategori wajib diisi');
         }
 
         // Generate slug from name
@@ -30,14 +30,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare("SELECT id FROM categories WHERE slug = ? AND id != ?");
         $stmt->execute([$slug, $id]);
         if ($stmt->fetch()) {
-            throw new Exception('A category with this name already exists');
+            throw new Exception('Kategori dengan nama ini sudah ada');
         }
 
         // Update category
         $stmt = $conn->prepare("UPDATE categories SET name = ?, slug = ?, description = ? WHERE id = ?");
         $stmt->execute([$name, $slug, $description, $id]);
 
-        header('Location: /admin/categories?success=Category updated successfully');
+        header('Location: /admin/categories?success=Kategori berhasil diubah');
         exit;
     } catch (Exception $e) {
         header('Location: /admin/categories?error=' . urlencode($e->getMessage()));

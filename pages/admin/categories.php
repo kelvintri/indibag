@@ -18,6 +18,10 @@ $query = "SELECT c.*, COUNT(p.id) as product_count
 $stmt = $conn->prepare($query);
 $stmt->execute();
 $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get success or error message from URL parameters
+$successMessage = $_GET['success'] ?? '';
+$errorMessage = $_GET['error'] ?? '';
 ?>
 
 <!DOCTYPE html>
@@ -30,13 +34,49 @@ $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-gray-100">
-    <div class="min-h-screen" x-data="{ showModal: false, editMode: false, categoryId: null }">
+    <div class="min-h-screen" 
+         x-data="{ 
+            showModal: false, 
+            editMode: false, 
+            categoryId: null,
+            categoryData: {},
+            showToast: <?= !empty($successMessage) || !empty($errorMessage) ? 'true' : 'false' ?>,
+            toastMessage: '<?= htmlspecialchars($successMessage ?: $errorMessage) ?>',
+            toastType: '<?= !empty($successMessage) ? 'success' : (!empty($errorMessage) ? 'error' : '') ?>'
+         }">
+        <!-- Toast Notification -->
+        <div x-show="showToast"
+             x-init="setTimeout(() => showToast = false, 3000)"
+             class="fixed top-4 right-4 z-50"
+             @click="showToast = false">
+            <div :class="{
+                'bg-green-500': toastType === 'success',
+                'bg-red-500': toastType === 'error'
+            }" class="rounded-lg p-4 text-white shadow-lg">
+                <div class="flex items-center">
+                    <!-- Success Icon -->
+                    <template x-if="toastType === 'success'">
+                        <svg class="h-6 w-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </template>
+                    <!-- Error Icon -->
+                    <template x-if="toastType === 'error'">
+                        <svg class="h-6 w-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </template>
+                    <span x-text="toastMessage"></span>
+                </div>
+            </div>
+        </div>
+
         <!-- Main Content -->
         <div class="py-6">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center mb-6">
                     <h1 class="text-2xl font-semibold text-gray-900">Manage Categories</h1>
-                    <button @click="showModal = true; editMode = false" 
+                    <button @click="showModal = true; editMode = false; categoryData = {}" 
                             class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
                         Add New Category
                     </button>
@@ -74,7 +114,14 @@ $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <button @click="showModal = true; editMode = true; categoryId = <?= $category['id'] ?>"
+                                    <button @click="
+                                        showModal = true; 
+                                        editMode = true; 
+                                        categoryId = <?= $category['id'] ?>;
+                                        categoryData = {
+                                            name: '<?= htmlspecialchars(addslashes($category['name'])) ?>',
+                                            description: '<?= htmlspecialchars(addslashes($category['description'] ?? '')) ?>'
+                                        }"
                                             class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
                                     <button @click="if (confirm('Are you sure you want to delete this category?')) window.location.href = '/admin/categories/delete?id=<?= $category['id'] ?>'"
                                             class="text-red-600 hover:text-red-900">Delete</button>
@@ -98,13 +145,13 @@ $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                        <input type="text" name="name" required
+                        <input type="text" name="name" required x-model="categoryData.name"
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                        <textarea name="description" rows="3"
+                        <textarea name="description" rows="3" x-model="categoryData.description"
                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
                     </div>
 

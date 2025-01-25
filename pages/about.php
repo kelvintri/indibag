@@ -123,7 +123,7 @@
                         </div>
                         <div class="text-center">
                             <h3 class="text-xl font-semibold text-gray-900">KELVIN TRIANSYAH</h3>
-                            <p class="text-gray-600 mt-1">20240801218</p>
+                            <p class="text-gray-600 mt-1">230030451</p>
                         </div>
                     </div>
                 </div>
